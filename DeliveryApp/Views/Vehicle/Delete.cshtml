@@ -1,0 +1,16 @@
+﻿@model DeliveryApp.Models.Vehicle
+@{
+    ViewData["Title"] = "Remove Vehicle";
+}
+
+<div class="container mt-5">
+    <h2 class="text-danger">Remove Registered Vehicle</h2>
+    <p>Are you sure you want to delete your <strong>@Model.Color @Model.Make @Model.Model</strong>?</p>
+    <p>You will not be able to accept rides until you register a new one.</p>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Delete Vehicle</button>
+        <a asp-controller="Ride" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

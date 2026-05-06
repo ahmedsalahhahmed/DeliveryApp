@@ -1,0 +1,50 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using DeliveryApp.Models
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+    // 1. Grab our custom user from the database
+    var currentUser = await UserManager.GetUserAsync(User);
+    
+    // 2. If for some reason the custom Name is missing, fall back to the Email safely
+    var displayName = currentUser?.Name ?? User.Identity?.Name;
+
+        <li class="nav-item">
+            <a class="nav-link text-dark d-flex align-items-center" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+
+                @* NEW: Check if the user has a profile picture *@
+                @if (!string.IsNullOrEmpty(currentUser?.ProfileImagePath))
+                {
+                    <img src="@currentUser.ProfileImagePath" alt="Profile" class="me-2" style="width: 30px; height: 30px; object-fit: cover; border-radius: 50%;" />
+                }
+                else
+                {
+                    @* Optional: A generic gray placeholder icon if they don't have a picture *@
+                    <div class="bg-secondary rounded-circle me-2 d-flex justify-content-center align-items-center text-white" style="width: 30px; height: 30px;">
+                        <span style="font-size: 14px;">@displayName?.Substring(0, 1).ToUpper()</span>
+                    </div>
+                }
+
+                Hello @displayName!
+            </a>
+        </li>
+
+    <li class="nav-item">
+        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li>
+}
+</ul>

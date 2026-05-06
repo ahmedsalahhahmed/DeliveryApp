@@ -1,0 +1,26 @@
+﻿@model DeliveryApp.Models.Ride
+@{
+    ViewData["Title"] = "Cancel Request";
+}
+
+<div class="container mt-5">
+    <h2 class="text-danger">Cancel Request</h2>
+    <h3>Are you sure you want to cancel this trip?</h3>
+    <hr />
+    <div>
+        <dl class="row">
+            <dt class="col-sm-3">Type</dt>
+            <dd class="col-sm-9">@Model.DeliveryType</dd>
+            <dt class="col-sm-3">Pickup</dt>
+            <dd class="col-sm-9">@Model.PickupAddress</dd>
+            <dt class="col-sm-3">Destination</dt>
+            <dd class="col-sm-9">@Model.DestinationAddress</dd>
+        </dl>
+
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">Yes, Cancel It</button>
+            <a asp-action="Index" class="btn btn-secondary">Keep Ride</a>
+        </form>
+    </div>
+</div>

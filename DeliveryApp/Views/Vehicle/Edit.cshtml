@@ -1,0 +1,32 @@
+﻿@model DeliveryApp.Models.Vehicle
+@{
+    ViewData["Title"] = "Edit Vehicle";
+}
+
+<div class="container mt-5">
+    <h2>Update Vehicle Details</h2>
+    <hr />
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Make" class="control-label">Make</label>
+            <input asp-for="Make" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Model" class="control-label">Model</label>
+            <input asp-for="Model" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Color" class="control-label">Color</label>
+            <input asp-for="Color" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="LicensePlate" class="control-label">License Plate</label>
+            <input asp-for="LicensePlate" class="form-control text-uppercase" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Updates</button>
+        <a asp-controller="Ride" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
