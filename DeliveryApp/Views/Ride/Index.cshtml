@@ -1,65 +1,135 @@
 ﻿@model IEnumerable<DeliveryApp.Models.Ride>
+@using Microsoft.AspNetCore.Identity
+@using DeliveryApp.Models
+@using DeliveryApp.Data
+@inject UserManager<AppUser> UserManager
+@inject ApplicationDbContext Context
 
 @{
-    ViewData["Title"] = "Ride Dashboard";
+    ViewData["Title"] = "Dashboard";
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    // Filter the rides based on who is looking
+    var myRides = new List<Ride>();
+    if (currentUser?.UserType == "Passenger")
+    {
+        myRides = Model.Where(r => r.PassengerId == currentUser.Id).ToList();
+    }
+    else if (currentUser?.UserType == "Driver")
+    {
+        // Drivers see rides looking for drivers, AND rides they are currently driving
+        myRides = Model.Where(r => r.Status == "Requested" || r.DriverId == currentUser.Id).ToList();
+    }
 }
 
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Ride & Delivery Dashboard</h2>
-        <a asp-action="RequestRide" class="btn btn-success">+ New Request</a>
+        @if(currentUser?.UserType == "Passenger")
+        {
+            <h2>My Active Ride</h2>
+            
+            @* We need the @ symbol below to tell Razor we are writing C# again! *@
+            @if (!myRides.Any(r => r.Status != "Completed" && r.Status != "Cancelled"))
+            {
+                <a asp-action="RequestRide" class="btn btn-success">+ Request New Ride</a>
+            }
+        }
+        else
+        {
+            <h2>Available Jobs & My Rides</h2>
+        }
     </div>
 
     <table class="table table-hover table-bordered">
         <thead class="table-dark">
             <tr>
                 <th>Type</th>
-                <th>Pickup</th>
-                <th>Destination</th>
+                <th>Route</th>
                 <th>Status</th>
+                @if (currentUser?.UserType == "Passenger")
+                {
+                    <th>Driver Details</th>
+                }
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @if (Model != null && Model.Any())
-            {
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @if (item.DeliveryType == "Package")
-                            {
-                                <span class="badge bg-info text-dark">📦 Package</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-primary">🚗 Passenger</span>
-                            }
-                        </td>
-                        <td>@item.PickupAddress</td>
-                        <td>@item.DestinationAddress</td>
-                        <td>
-                            <span class="badge bg-warning text-dark">@item.Status</span>
-                        </td>
-
-                        <td>
-                            @if (item.Status == "Requested")
-                            {
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Cancel</a>
-                            }
-                            else
-                            {
-                                <span class="text-muted small">Ride in progress</span>
-                            }
-                        </td>
-                    </tr>
-                }
-            }
-            else
+            @foreach (var item in myRides)
             {
                 <tr>
-                    <td colspan="5" class="text-center">No rides requested yet.</td>
+                    <td>@(item.DeliveryType == "Package" ? "📦 Package" : "🚗 Passenger")</td>
+                    <td><strong>From:</strong> @item.PickupAddress <br /> <strong>To:</strong> @item.DestinationAddress</td>
+                    <td><span class="badge bg-warning text-dark">@item.Status</span></td>
+
+                    @if (currentUser?.UserType == "Passenger")
+                    {
+                        <td>
+                            @if (item.DriverId != null && item.Driver != null)
+                            {
+                                <div class="d-flex align-items-center">
+                                    @if (!string.IsNullOrEmpty(item.Driver.ProfileImagePath))
+                                    {
+                                        <img src="@item.Driver.ProfileImagePath" class="rounded-circle me-3 shadow-sm" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #ddd;" alt="Driver Photo" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-secondary rounded-circle me-3 d-flex justify-content-center align-items-center text-white shadow-sm" style="width: 50px; height: 50px;">
+                                            <span style="font-size: 20px;">👤</span>
+                                        </div>
+                                    }
+
+                                    <div>
+                                        <strong class="mb-0">@item.Driver.Name</strong><br />
+                                        <span class="text-muted small">
+                                            @item.Driver.DriverVehicle?.Color @item.Driver.DriverVehicle?.Make @item.Driver.DriverVehicle?.Model <br />
+                                            Plate: <strong class="text-dark">@item.Driver.DriverVehicle?.LicensePlate</strong>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Waiting for driver...</span>
+                            }
+                        </td>
+                    }
+                    <td>
+                        @if (currentUser?.UserType == "Passenger" && item.Status == "Requested")
+                        {
+                            var offerCount = Context.RideOffers.Count(o => o.RideId == item.Id);
+                            <a asp-action="ViewOffers" asp-route-rideId="@item.Id" class="btn btn-sm btn-primary">
+                                View Offers (@offerCount)
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Cancel Request</a>
+                        }
+
+                        @if (currentUser?.UserType == "Driver")
+                        {
+                            if (item.Status == "Requested" && item.DriverId == null)
+                            {
+                                // Did I already offer?
+                                var alreadyOffered = Context.RideOffers.Any(o => o.RideId == item.Id && o.DriverId == currentUser.Id);
+                                if (alreadyOffered)
+                                {
+                                    <span class="badge bg-secondary">Offer Sent - Waiting on Passenger</span>
+                                }
+                                else
+                                {
+                                    <form asp-action="MakeOffer" method="post" class="d-inline">
+                                        <input type="hidden" name="rideId" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success">Offer to Drive</button>
+                                    </form>
+                                }
+                            }
+                            else if (item.Status == "Driver Assigned" && item.DriverId == currentUser.Id)
+                            {
+                                <form asp-action="CompleteRide" method="post" class="d-inline">
+                                    <input type="hidden" name="rideId" value="@item.Id" />
+                                    <button type="submit" class="btn btn-sm btn-dark">Mark as Completed</button>
+                                </form>
+                            }
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

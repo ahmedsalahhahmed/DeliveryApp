@@ -25,6 +25,25 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            if (currentUser != null)
+                            {
+                                <li class="nav-item">
+                                    @if (currentUser.UserType == "Passenger")
+                                    {
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Index">My Rides</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Ride" asp-action="Index">Find Work / My Jobs</a>
+                                    }
+                                </li>
+                            }
+                        }
+
                         @if (User.Identity.IsAuthenticated)
                         {
                             var currentUser = await UserManager.GetUserAsync(User);

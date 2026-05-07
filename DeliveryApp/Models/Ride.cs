@@ -26,6 +26,10 @@ namespace DeliveryApp.Models
         // Package-specific fields
         public string? PackageDescription { get; set; }
         public double? EstimatedWeightKg { get; set; }
+
+        public double? LengthCm { get; set; }
+        public double? WidthCm { get; set; }
+        public double? HeightCm { get; set; }
         public string? RecipientName { get; set; }
         public string? RecipientPhone { get; set; }
 

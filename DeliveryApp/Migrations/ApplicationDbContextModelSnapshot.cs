@@ -120,6 +120,12 @@ namespace DeliveryApp.Migrations
                     b.Property<double?>("EstimatedWeightKg")
                         .HasColumnType("float");
 
+                    b.Property<double?>("HeightCm")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("LengthCm")
+                        .HasColumnType("float");
+
                     b.Property<string>("PackageDescription")
                         .HasColumnType("nvarchar(max)");
 
@@ -144,6 +150,9 @@ namespace DeliveryApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("WidthCm")
+                        .HasColumnType("float");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DriverId");
@@ -151,6 +160,30 @@ namespace DeliveryApp.Migrations
                     b.HasIndex("PassengerId");
 
                     b.ToTable("Rides");
+                });
+
+            modelBuilder.Entity("DeliveryApp.Models.RideOffer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DriverId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("RideId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("RideId");
+
+                    b.ToTable("RideOffers");
                 });
 
             modelBuilder.Entity("DeliveryApp.Models.Vehicle", b =>
@@ -341,6 +374,25 @@ namespace DeliveryApp.Migrations
                     b.Navigation("Driver");
 
                     b.Navigation("Passenger");
+                });
+
+            modelBuilder.Entity("DeliveryApp.Models.RideOffer", b =>
+                {
+                    b.HasOne("DeliveryApp.Models.AppUser", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliveryApp.Models.Ride", "Ride")
+                        .WithMany()
+                        .HasForeignKey("RideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Ride");
                 });
 
             modelBuilder.Entity("DeliveryApp.Models.Vehicle", b =>

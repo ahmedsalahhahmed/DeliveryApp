@@ -1,8 +1,70 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+@using DeliveryApp.Models
+@inject UserManager<AppUser> UserManager
+
+@{
     ViewData["Title"] = "Home Page";
+
+    // Grab the user so we can check their UserType
+    AppUser currentUser = null;
+    if (User.Identity.IsAuthenticated)
+    {
+        currentUser = await UserManager.GetUserAsync(User);
+    }
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mt-5">
+    <h1 class="display-4 fw-bold text-primary">Welcome to DeliveryApp</h1>
+    <p class="lead text-muted">The smartest marketplace for rides and package deliveries.</p>
+
+    <div class="mt-5">
+        @if (currentUser != null)
+        {
+            @* --- PASSENGER BUTTONS --- *@
+            if (currentUser.UserType == "Passenger")
+            {
+                <a asp-controller="Ride" asp-action="RequestRide" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
+                    📦 Request a Delivery
+                </a>
+                <a asp-controller="Ride" asp-action="Index" class="btn btn-outline-dark btn-lg mx-2 px-4 shadow-sm">
+                    📋 View My Requests
+                </a>
+            }
+            @* --- DRIVER BUTTONS --- *@
+            else if (currentUser.UserType == "Driver")
+            {
+                <a asp-controller="Ride" asp-action="Index" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
+                    🔍 Find Available Jobs
+                </a>
+                <a asp-controller="Vehicle" asp-action="Manage" class="btn btn-outline-dark btn-lg mx-2 px-4 shadow-sm">
+                    ⚙️ Manage My Vehicle
+                </a>
+            }
+        }
+        else
+        {
+            @* --- GUEST BUTTONS (Not Logged In) --- *@
+            <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
+                Join as Passenger or Driver
+            </a>
+            <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-dark btn-lg mx-2 px-4 shadow-sm">
+                Login
+            </a>
+        }
+    </div>
+</div>
+
+<div class="row mt-5 pt-5 text-center">
+    <div class="col-md-4">
+        <h3>🚗 Choose Your Driver</h3>
+        <p class="text-muted">Don't settle for random assignments. Browse available drivers, see their vehicles, and pick the perfect match for your trip.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>⚖️ Dynamic Pricing</h3>
+        <p class="text-muted">Sending a package? Our smart algorithm calculates fair pricing instantly based on the exact weight and dimensions of your cargo.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>🔒 Secure Platform</h3>
+        <p class="text-muted">Driver verifications and mandatory vehicle registrations ensure that your rides and deliveries are always safe and reliable.</p>
+    </div>
 </div>

@@ -1,0 +1,96 @@
+﻿@model DeliveryApp.Models.Ride
+
+@{
+    ViewData["Title"] = "Request a Ride or Delivery";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">What do you need?</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="RequestRide" method="post">
+
+                        <div class="mb-4">
+                            <label asp-for="DeliveryType" class="form-label fw-bold">Service Type</label>
+                            <select asp-for="DeliveryType" class="form-select form-select-lg" id="deliveryTypeSelect">
+                                <option value="Passenger">🚗 I need a ride (Passenger)</option>
+                                <option value="Package">📦 I need to send a Package</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="PickupAddress" class="form-label fw-bold">Pickup Address</label>
+                                <input asp-for="PickupAddress" class="form-control" placeholder="123 Main St" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DestinationAddress" class="form-label fw-bold">Destination Address</label>
+                                <input asp-for="DestinationAddress" class="form-control" placeholder="456 Market St" required />
+                            </div>
+                        </div>
+
+                        <div id="packageDetailsSection" class="p-4 bg-light border rounded mb-4" style="display: none;">
+                            <h5 class="fw-bold mb-3">Package Details (Used for Pricing)</h5>
+
+                            <div class="mb-3">
+                                <label asp-for="PackageDescription" class="form-label">What are you sending?</label>
+                                <input asp-for="PackageDescription" class="form-control" placeholder="e.g., A box of books" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label asp-for="EstimatedWeightKg" class="form-label">Weight (kg)</label>
+                                    <input asp-for="EstimatedWeightKg" type="number" step="0.1" class="form-control" placeholder="0.0" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label asp-for="LengthCm" class="form-label">Length (cm)</label>
+                                    <input asp-for="LengthCm" type="number" step="0.1" class="form-control" placeholder="0.0" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label asp-for="WidthCm" class="form-label">Width (cm)</label>
+                                    <input asp-for="WidthCm" type="number" step="0.1" class="form-control" placeholder="0.0" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label asp-for="HeightCm" class="form-label">Height (cm)</label>
+                                    <input asp-for="HeightCm" type="number" step="0.1" class="form-control" placeholder="0.0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">Request Now</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // JavaScript to show/hide the Package dimensions based on the dropdown!
+        const typeSelect = document.getElementById('deliveryTypeSelect');
+        const packageSection = document.getElementById('packageDetailsSection');
+
+        function togglePackageSection() {
+            if (typeSelect.value === 'Package') {
+                packageSection.style.display = 'block';
+            } else {
+                packageSection.style.display = 'none';
+            }
+        }
+
+        // Listen for changes
+        typeSelect.addEventListener('change', togglePackageSection);
+
+        // Run once on page load just in case
+        togglePackageSection();
+    </script>
+}

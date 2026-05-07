@@ -1,0 +1,56 @@
+﻿@model IEnumerable<DeliveryApp.Models.AvailableDriverViewModel>
+@{
+    ViewData["Title"] = "Driver Offers";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center">Drivers Ready for Pickup</h2>
+    <p class="text-center text-muted">Your agreed fare: <strong class="text-success">$@ViewBag.CalculatedPrice.ToString("0.00")</strong></p>
+    <hr />
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center mt-4">
+            <h4>No offers yet!</h4>
+            <p>Drivers haven't seen your request yet. Please check back in a few minutes.</p>
+            <a asp-action="Index" class="btn btn-outline-primary mt-2">Back to Dashboard</a>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            @foreach (var driver in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm text-center h-100">
+                        <div class="card-body d-flex flex-column">
+
+                            @if (!string.IsNullOrEmpty(driver.ProfileImagePath))
+                            {
+                                <img src="@driver.ProfileImagePath" class="rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #eee;" alt="Driver Photo" />
+                            }
+                            else
+                            {
+                                <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex justify-content-center align-items-center text-white" style="width: 100px; height: 100px; border: 3px solid #eee;">
+                                    <span style="font-size: 24px;">👤</span>
+                                </div>
+                            }
+
+                            <h4 class="card-title fw-bold">@driver.Name</h4>
+                            <p class="card-text text-muted mb-4">Drives a <strong>@driver.CarMake @driver.CarModel</strong></p>
+
+                            <div class="mt-auto">
+                                <form asp-action="AssignDriver" method="post">
+                                    <input type="hidden" name="rideId" value="@ViewBag.RideId" />
+                                    <input type="hidden" name="driverId" value="@driver.DriverId" />
+                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Accept Driver</button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
