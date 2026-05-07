@@ -1,21 +1,29 @@
 ﻿@model IEnumerable<DeliveryApp.Models.Ride>
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<AppUser> UserManager
 
 @{
     ViewData["Title"] = "Ride Dashboard";
+    // تعريف اليوزر هنا مرة واحدة ليراه كل الجدول بالأسفل
+    var currentUser = await UserManager.GetUserAsync(User);
 }
 
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Ride & Delivery Dashboard</h2>
-        <a asp-action="RequestRide" class="btn btn-success">+ New Request</a>
+        @if (currentUser?.UserType == "Passenger")
+        {
+            <a asp-action="RequestRide" class="btn btn-success">+ New Request</a>
+        }
     </div>
 
-    <table class="table table-hover table-bordered">
+    <table class="table table-hover table-bordered shadow-sm">
         <thead class="table-dark">
             <tr>
                 <th>Type</th>
                 <th>Pickup</th>
                 <th>Destination</th>
+                <th>@(currentUser?.UserType == "Driver" ? "Customer" : "Driver")</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -27,30 +35,47 @@
                 {
                     <tr>
                         <td>
-                            @if (item.DeliveryType == "Package")
-                            {
-                                <span class="badge bg-info text-dark">📦 Package</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-primary">🚗 Passenger</span>
-                            }
+                            <span class="badge @(item.DeliveryType == "Package" ? "bg-info text-dark" : "bg-primary")">
+                                @(item.DeliveryType == "Package" ? "📦 Package" : "🚗 Passenger")
+                            </span>
                         </td>
                         <td>@item.PickupAddress</td>
                         <td>@item.DestinationAddress</td>
                         <td>
+                            @if (currentUser?.UserType == "Driver")
+                            {
+                                <strong>@item.Passenger?.Name</strong>
+                            }
+                            else
+                            {
+                                @(item.Driver != null ? item.Driver.Name : "Searching...")
+                            }
+                        </td>
+                        <td>
                             <span class="badge bg-warning text-dark">@item.Status</span>
                         </td>
-
                         <td>
-                            @if (item.Status == "Requested")
+                            @if (item.Status == "Requested" && currentUser?.Id == item.PassengerId)
                             {
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
                                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Cancel</a>
                             }
-                            else
+                            else if (item.Status == "Accepted")
                             {
-                                <span class="text-muted small">Ride in progress</span>
+                                if (item.DriverId == currentUser?.Id)
+                                {
+                                    <form asp-action="CompleteRide" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">Complete Ride</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">In Progress</span>
+                                }
+                            }
+                            else if (item.Status == "Completed")
+                            {
+                                <span class="badge bg-secondary">Finished</span>
                             }
                         </td>
                     </tr>
@@ -58,9 +83,7 @@
             }
             else
             {
-                <tr>
-                    <td colspan="5" class="text-center">No rides requested yet.</td>
-                </tr>
+                <tr><td colspan="6" class="text-center">No data available.</td></tr>
             }
         </tbody>
     </table>
