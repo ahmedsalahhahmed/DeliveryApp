@@ -11,12 +11,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DeliveryApp.styles.css" asp-append-version="true" />
 </head>
-@if (User.Identity.IsAuthenticated)
-{
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Ride" asp-action="AvailableRides">Available Rides</a>
-    </li>
-}
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
