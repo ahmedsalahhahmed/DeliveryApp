@@ -21,9 +21,7 @@ namespace DeliveryApp.Models
         [Required]
         public string Color { get; set; }
 
-        // REGEX FOR EGYPT: 
-        // [\u0600-\u06FF\s]{2,5} -> Allows 2 to 3 Arabic letters (with optional spaces between them)
-        // [0-9\u0660-\u0669]{3,4} -> Allows 3 to 4 numbers (both English 123 and Arabic ١٢٣ format)
+
         [Required(ErrorMessage = "License plate is required.")]
         [RegularExpression(@"^[\u0600-\u06FF\s]{2,5}[0-9\u0660-\u0669]{3,4}$",
             ErrorMessage = "Invalid format. Must be 2-3 Arabic letters followed by 3-4 numbers (e.g., أ ب ج 1234).")]
