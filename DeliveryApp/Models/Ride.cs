@@ -26,11 +26,16 @@ namespace DeliveryApp.Models
         // Package-specific fields
         public string? PackageDescription { get; set; }
 
-        [Range(0.1, 10.0, ErrorMessage = "Package weight must be between 0.1 and 50 kg.")]
+        [Range(0.1, 20.0, ErrorMessage = "Package weight must be between 0.1 and 20 kg.")]
         public double? EstimatedWeightKg { get; set; }
 
+        [Range(1.0, 50.0, ErrorMessage = "Length must be between 1 and 50 cm.")]
         public double? LengthCm { get; set; }
+
+        [Range(1.0, 50.0, ErrorMessage = "Width must be between 1 and 50 cm.")]
         public double? WidthCm { get; set; }
+
+        [Range(1.0, 50.0, ErrorMessage = "Height must be between 1 and 50 cm.")]
         public double? HeightCm { get; set; }
         public string? RecipientName { get; set; }
         public string? RecipientPhone { get; set; }

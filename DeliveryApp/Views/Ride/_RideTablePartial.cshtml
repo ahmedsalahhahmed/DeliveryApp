@@ -43,6 +43,16 @@
                 <td>
                     <strong class="text-success">From:</strong> @item.PickupAddress <br />
                     <strong class="text-danger">To:</strong> @item.DestinationAddress
+
+                    @if (item.DeliveryType == "Package")
+                    {
+                        <div class="mt-2 p-2 bg-light border rounded small shadow-sm">
+                            <strong class="text-dark">📦 Item:</strong> @(string.IsNullOrEmpty(item.PackageDescription) ? "No description provided" : item.PackageDescription) <br />
+                            <span class="text-muted fw-bold">
+                                ⚖️ @item.EstimatedWeightKg kg | 📏 @item.LengthCm x @item.WidthCm x @item.HeightCm cm
+                            </span>
+                        </div>
+                    }
                 </td>
 
                 <td class="text-center">
