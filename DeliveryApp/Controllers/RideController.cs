@@ -105,22 +105,25 @@ namespace DeliveryApp.Controllers
         public async Task<IActionResult> MakeOffer(int rideId, decimal offeredPrice)
         {
             var user = await _userManager.GetUserAsync(User);
+
+            // 1. Do they have a car?
             var hasCar = _context.Vehicles.Any(v => v.DriverId == user.Id);
             if (!hasCar) return RedirectToAction("RegisterCar", "Vehicle");
 
-            bool isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+            
+            var isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
             if (isBusy)
             {
-                TempData["ErrorMessage"] = "You cannot bid on new jobs while you are on an active trip.";
+                TempData["ErrorMessage"] = "You cannot bid on new rides while you have an active passenger!";
                 return RedirectToAction(nameof(Index));
             }
+            
 
             var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
             if (ride == null) return NotFound();
 
             // SECURITY: Prevent price gouging (Max 20% markup)
             decimal maxAllowedPrice = Math.Round(ride.Price * 1.20m, 2);
-
             if (offeredPrice < ride.Price || offeredPrice > maxAllowedPrice)
             {
                 TempData["ErrorMessage"] = $"Your offer was rejected. Bids must be strictly between ${ride.Price:0.00} and ${maxAllowedPrice:0.00}.";
@@ -165,16 +168,14 @@ namespace DeliveryApp.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignDriver(int rideId, string driverId)
         {
-            // ==========================================
-            // NEW: DOUBLE BOOKING DEFENSE
-            // Did another passenger hire this driver 5 seconds ago?
-            // ==========================================
-            bool isDriverBusy = _context.Rides.Any(r => r.DriverId == driverId && r.Status == "Driver Assigned");
-            if (isDriverBusy)
+            
+            var driverIsBusy = _context.Rides.Any(r => r.DriverId == driverId && r.Status == "Driver Assigned");
+            if (driverIsBusy)
             {
-                TempData["ErrorMessage"] = "Sorry, this driver just accepted another job! Please select a different driver.";
-                return RedirectToAction("ViewOffers", new { rideId = rideId });
+                TempData["ErrorMessage"] = "Sorry! This driver just accepted another job. Please choose someone else.";
+                return RedirectToAction(nameof(Index));
             }
+            
 
             var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
             var acceptedOffer = _context.RideOffers.FirstOrDefault(o => o.RideId == rideId && o.DriverId == driverId);
@@ -183,16 +184,10 @@ namespace DeliveryApp.Controllers
             {
                 ride.DriverId = driverId;
                 ride.Status = "Driver Assigned";
-                ride.Price = acceptedOffer.OfferedPrice;
+                ride.Price = acceptedOffer.OfferedPrice; // Update official price to the winning bid!
 
-                // 1. Remove all competing offers for THIS ride (since it is now claimed)
                 var relatedOffers = _context.RideOffers.Where(o => o.RideId == rideId);
                 _context.RideOffers.RemoveRange(relatedOffers);
-
-                // 2. AUTO-CLEANUP: Remove this driver's bids from all OTHER rides!
-                var driversOtherBids = _context.RideOffers.Where(o => o.DriverId == driverId);
-                _context.RideOffers.RemoveRange(driversOtherBids);
-
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
