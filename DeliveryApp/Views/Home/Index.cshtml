@@ -5,7 +5,7 @@
 @{
     ViewData["Title"] = "Home Page";
 
-    // Grab the user so we can check their UserType
+    // Grab the user so we can check their UserType for regular accounts
     AppUser currentUser = null;
     if (User.Identity.IsAuthenticated)
     {
@@ -18,10 +18,20 @@
     <p class="lead text-muted">The smartest marketplace for rides and package deliveries.</p>
 
     <div class="mt-5">
-        @if (currentUser != null)
+        @if (User.Identity.IsAuthenticated)
         {
-            @* --- PASSENGER BUTTONS --- *@
-            if (currentUser.UserType == "Passenger")
+            @* --- 1. ADMIN BUTTONS (Highest Priority) --- *@
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-controller="Admin" asp-action="Index" class="btn btn-danger btn-lg mx-2 px-4 shadow-sm">
+                    👑 Enter Admin Panel
+                </a>
+                <a asp-controller="Admin" asp-action="AllRides" class="btn btn-outline-dark btn-lg mx-2 px-4 shadow-sm">
+                    🌍 View All Activity
+                </a>
+            }
+            @* --- 2. PASSENGER BUTTONS --- *@
+            else if (currentUser?.UserType == "Passenger")
             {
                 <a asp-controller="Ride" asp-action="RequestRide" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
                     📦 Request a Delivery
@@ -30,8 +40,8 @@
                     📋 View My Requests
                 </a>
             }
-            @* --- DRIVER BUTTONS --- *@
-            else if (currentUser.UserType == "Driver")
+            @* --- 3. DRIVER BUTTONS --- *@
+            else if (currentUser?.UserType == "Driver")
             {
                 <a asp-controller="Ride" asp-action="Index" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
                     🔍 Find Available Jobs
@@ -43,7 +53,7 @@
         }
         else
         {
-            @* --- GUEST BUTTONS (Not Logged In) --- *@
+            @* --- 4. GUEST BUTTONS (Not Logged In) --- *@
             <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg mx-2 px-4 shadow-sm">
                 Join as Passenger or Driver
             </a>

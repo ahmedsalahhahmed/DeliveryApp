@@ -7,5 +7,7 @@
         public string ProfileImagePath { get; set; }
         public string CarMake { get; set; }
         public string CarModel { get; set; }
+
+        public decimal OfferedPrice { get; set; }
     }
 }

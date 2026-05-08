@@ -35,6 +35,7 @@ namespace DeliveryApp.Models
 
         public string Status { get; set; } = "Requested"; //[cite: 8]
         public decimal Price { get; set; }
+        public double? DistanceKm { get; set; }
         //[cite: 8]
     }
 }

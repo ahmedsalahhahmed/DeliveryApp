@@ -114,6 +114,9 @@ namespace DeliveryApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("DistanceKm")
+                        .HasColumnType("float");
+
                     b.Property<string>("DriverId")
                         .HasColumnType("nvarchar(450)");
 
@@ -174,6 +177,9 @@ namespace DeliveryApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<decimal>("OfferedPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("RideId")
                         .HasColumnType("int");
 
@@ -204,7 +210,7 @@ namespace DeliveryApp.Migrations
 
                     b.Property<string>("LicensePlate")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Make")
                         .IsRequired()
@@ -212,11 +218,15 @@ namespace DeliveryApp.Migrations
 
                     b.Property<string>("Model")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DriverId")
+                        .IsUnique();
+
+                    b.HasIndex("LicensePlate")
                         .IsUnique();
 
                     b.ToTable("Vehicles");

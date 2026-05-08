@@ -20,17 +20,10 @@ namespace DeliveryApp.Controllers
 
         // GET: Shows the empty form to the user
         [HttpGet]
-        public async Task<IActionResult> RegisterCar()
+        public IActionResult RegisterCar()
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            // SECURITY CHECK: Kick them out if they aren't a driver!
-            if (user == null || user.UserType != "Driver")
-            {
-                // You can send them back to the dashboard if they try to sneak in
-                return RedirectToAction("Index", "Ride");
-            }
-
+            // Send the list of cars to the frontend!
+            ViewBag.CarMakes = GetCarMakes();
             return View();
         }
 
@@ -56,6 +49,13 @@ namespace DeliveryApp.Controllers
             vehicle.DriverId = user.Id;
             ModelState.Remove("DriverId");
             ModelState.Remove("Driver");
+
+            var plateExists = _context.Vehicles.Any(v => v.LicensePlate == vehicle.LicensePlate);
+            if (plateExists)
+            {
+                // This attaches a red error message directly to the License Plate text box!
+                ModelState.AddModelError("LicensePlate", "هذه اللوحة مسجلة بالفعل في النظام (This plate is already registered).");
+            }
 
             if (ModelState.IsValid)
             {
@@ -157,6 +157,36 @@ namespace DeliveryApp.Controllers
 
             // If they DO have a car, automatically send them to the Edit form with their Car's ID!
             return RedirectToAction(nameof(Edit), new { id = vehicle.Id });
+        }
+
+        // A helper method to generate a list of car brands optimized for the Egyptian Market
+        private List<string> GetCarMakes()
+        {
+            var makes = new List<string>
+            { 
+                // The Absolute Most Popular (Uber/InDrive Staples in Egypt)
+                "Hyundai", "Nissan", "Chevrolet", "Kia", "BYD", "Chery", "MG",
+                "Renault", "Toyota", "Skoda", "Peugeot", "Fiat", "Lada", "Suzuki", "Mitsubishi",
+
+                // Very Common Daily Drivers
+                "Opel", "Seat", "Volkswagen", "Citroen", "Geely", "Mazda", "Honda",
+                "Ford", "Subaru", "Proton", "Daihatsu",
+
+                // Chinese & Emerging Brands (Massive growth in Egypt right now)
+                "Changan", "Haval", "Jetour", "DFSK", "BAIC", "Brilliance", "FAW",
+                "Zotye", "JAC", "Soueast", "Dongfeng", "Exeed", "Bestune", "Speranza", "Senova",
+
+                // Luxury (For Uber Select / Uber Black)
+                "Mercedes-Benz", "BMW", "Audi", "Jeep", "Volvo", "Lexus", "Land Rover",
+                "Alfa Romeo", "Porsche", "Jaguar", "Mini",
+
+                // American / Heavy Duty
+                "Chrysler", "Dodge", "GMC"
+                
+            };
+
+            makes.Sort(); // Alphabetizes the list automatically!
+            return makes;
         }
 
     }

@@ -17,14 +17,23 @@
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                         <div class="mb-3">
-                            <label asp-for="Make" class="control-label fw-bold">Car Make</label>
-                            <input asp-for="Make" class="form-control" placeholder="e.g., Toyota, Honda" />
+                            <label asp-for="Make" class="control-label fw-bold"> Manufacturer </label>
+
+                            <select asp-for="Make" class="form-select" id="carMakeSearch">
+                                <option value="">-- Search Make --</option>
+
+                                @foreach (var make in ViewBag.CarMakes)
+                                {
+                                    <option value="@make">@make</option>
+                                }
+                            </select>
+
                             <span asp-validation-for="Make" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Model" class="control-label fw-bold">Car Model</label>
-                            <input asp-for="Model" class="form-control" placeholder="e.g., Camry, Civic" />
+                            <input asp-for="Model" class="form-control" placeholder="e.g., Corolla, Elantra" />
                             <span asp-validation-for="Model" class="text-danger"></span>
                         </div>
 
@@ -37,6 +46,7 @@
                         <div class="mb-3">
                             <label asp-for="LicensePlate" class="control-label fw-bold">License Plate Number</label>
                             <input asp-for="LicensePlate" class="form-control text-uppercase" placeholder="ABC-1234" />
+                            <div class="form-text">Format: 2-3 letters, a dash, and 3-4 numbers.</div>
                             <span asp-validation-for="LicensePlate" class="text-danger"></span>
                         </div>
 
@@ -49,7 +59,20 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#carMakeSearch').select2({
+                placeholder: "-- Search Make --",
+                allowClear: true,
+                width: '100%', // Ensures it matches Bootstrap's sizing
+                dir: "rtl" // Set to "rtl" if your page is mostly Arabic, or "ltr" for English
+            });
+        });
+    </script>
 }

@@ -9,5 +9,7 @@
 
         public string DriverId { get; set; }
         public AppUser Driver { get; set; }
+
+        public decimal OfferedPrice { get; set; }
     }
 }

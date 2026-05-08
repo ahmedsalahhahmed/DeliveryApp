@@ -1,137 +1,115 @@
 ﻿@model IEnumerable<DeliveryApp.Models.Ride>
 @using Microsoft.AspNetCore.Identity
 @using DeliveryApp.Models
-@using DeliveryApp.Data
 @inject UserManager<AppUser> UserManager
-@inject ApplicationDbContext Context
 
 @{
     ViewData["Title"] = "Dashboard";
     var currentUser = await UserManager.GetUserAsync(User);
 
-    // Filter the rides based on who is looking
-    var myRides = new List<Ride>();
+    ViewData["CurrentUser"] = currentUser;
+
+    var passengerRides = new List<Ride>();
+    var activeDriverJobs = new List<Ride>();
+    var availableJobs = new List<Ride>();
+
+    // NEW: A list to hold the driver's past trips!
+    var completedDriverJobs = new List<Ride>();
+
     if (currentUser?.UserType == "Passenger")
     {
-        myRides = Model.Where(r => r.PassengerId == currentUser.Id).ToList();
+        passengerRides = Model.Where(r => r.PassengerId == currentUser.Id).OrderByDescending(r => r.Id).ToList();
     }
     else if (currentUser?.UserType == "Driver")
     {
-        // Drivers see rides looking for drivers, AND rides they are currently driving
-        myRides = Model.Where(r => r.Status == "Requested" || r.DriverId == currentUser.Id).ToList();
+        activeDriverJobs = Model.Where(r => r.DriverId == currentUser.Id && r.Status == "Driver Assigned").ToList();
+        availableJobs = Model.Where(r => r.Status == "Requested").OrderByDescending(r => r.Id).ToList();
+
+        // NEW: Filter out the jobs this driver has successfully finished
+        completedDriverJobs = Model.Where(r => r.DriverId == currentUser.Id && r.Status == "Completed").OrderByDescending(r => r.Id).ToList();
     }
 }
 
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        @if(currentUser?.UserType == "Passenger")
-        {
-            <h2>My Active Ride</h2>
-            
-            @* We need the @ symbol below to tell Razor we are writing C# again! *@
-            @if (!myRides.Any(r => r.Status != "Completed" && r.Status != "Cancelled"))
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger shadow-sm border-danger border-2 text-center mb-4">
+            <strong>❌ Error:</strong> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (currentUser?.UserType == "Driver" && ViewBag.HasVehicle == false)
+    {
+        <div class="alert alert-danger shadow-sm border-danger border-2 text-center mb-4">
+            <h4 class="alert-heading fw-bold">⚠️ Action Required</h4>
+            <p>You cannot accept rides or view job details until you register a vehicle.</p>
+            <hr>
+            <a asp-controller="Vehicle" asp-action="RegisterCar" class="btn btn-danger fw-bold">Register Your Vehicle Now</a>
+        </div>
+    }
+
+    @* ========================================================================= *@
+    @* PASSENGER VIEW *@
+    @* ========================================================================= *@
+    @if (currentUser?.UserType == "Passenger")
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>My Rides</h2>
+            @if (!passengerRides.Any(r => r.Status != "Completed" && r.Status != "Cancelled"))
             {
                 <a asp-action="RequestRide" class="btn btn-success">+ Request New Ride</a>
             }
-        }
-        else
+        </div>
+
+        <div class="table-responsive">
+            <partial name="_RideTablePartial" model="passengerRides" view-data="ViewData" />
+        </div>
+    }
+
+    @* ========================================================================= *@
+    @* DRIVER VIEW *@
+    @* ========================================================================= *@
+    @if (currentUser?.UserType == "Driver")
+    {
+        // SECTION 1: MY ACTIVE JOB
+        @if (activeDriverJobs.Any())
         {
-            <h2>Available Jobs & My Rides</h2>
+            <div class="card border-success mb-5 shadow-sm">
+                <div class="card-header bg-success text-white fw-bold">
+                    <h4 class="mb-0">📍 My Active Job</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive mb-0">
+                        <partial name="_RideTablePartial" model="activeDriverJobs" view-data="ViewData" />
+                    </div>
+                </div>
+            </div>
         }
-    </div>
 
-    <table class="table table-hover table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th>Type</th>
-                <th>Route</th>
-                <th>Status</th>
-                @if (currentUser?.UserType == "Passenger")
-                {
-                    <th>Driver Details</th>
-                }
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in myRides)
-            {
-                <tr>
-                    <td>@(item.DeliveryType == "Package" ? "📦 Package" : "🚗 Passenger")</td>
-                    <td><strong>From:</strong> @item.PickupAddress <br /> <strong>To:</strong> @item.DestinationAddress</td>
-                    <td><span class="badge bg-warning text-dark">@item.Status</span></td>
+        // SECTION 2: THE AVAILABLE JOBS BOARD
+        <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+            <h2>🌍 Available Jobs Board</h2>
+            <span class="badge bg-primary fs-6">@availableJobs.Count Open Jobs</span>
+        </div>
+        <div class="table-responsive shadow-sm border rounded mb-5">
+            <partial name="_RideTablePartial" model="availableJobs" view-data="ViewData" />
+        </div>
 
-                    @if (currentUser?.UserType == "Passenger")
-                    {
-                        <td>
-                            @if (item.DriverId != null && item.Driver != null)
-                            {
-                                <div class="d-flex align-items-center">
-                                    @if (!string.IsNullOrEmpty(item.Driver.ProfileImagePath))
-                                    {
-                                        <img src="@item.Driver.ProfileImagePath" class="rounded-circle me-3 shadow-sm" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #ddd;" alt="Driver Photo" />
-                                    }
-                                    else
-                                    {
-                                        <div class="bg-secondary rounded-circle me-3 d-flex justify-content-center align-items-center text-white shadow-sm" style="width: 50px; height: 50px;">
-                                            <span style="font-size: 20px;">👤</span>
-                                        </div>
-                                    }
+        // ==========================================
+        // SECTION 3: NEW TRIP HISTORY SECTION!
+        // ==========================================
+        @if (completedDriverJobs.Any())
+        {
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
+                <h3 class="text-muted">✅ Trip History</h3>
+                <span class="badge bg-secondary fs-6">@completedDriverJobs.Count Completed</span>
+            </div>
 
-                                    <div>
-                                        <strong class="mb-0">@item.Driver.Name</strong><br />
-                                        <span class="text-muted small">
-                                            @item.Driver.DriverVehicle?.Color @item.Driver.DriverVehicle?.Make @item.Driver.DriverVehicle?.Model <br />
-                                            Plate: <strong class="text-dark">@item.Driver.DriverVehicle?.LicensePlate</strong>
-                                        </span>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="text-muted fst-italic">Waiting for driver...</span>
-                            }
-                        </td>
-                    }
-                    <td>
-                        @if (currentUser?.UserType == "Passenger" && item.Status == "Requested")
-                        {
-                            var offerCount = Context.RideOffers.Count(o => o.RideId == item.Id);
-                            <a asp-action="ViewOffers" asp-route-rideId="@item.Id" class="btn btn-sm btn-primary">
-                                View Offers (@offerCount)
-                            </a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Cancel Request</a>
-                        }
+            <div class="table-responsive shadow-sm border rounded opacity-75">
+                <partial name="_RideTablePartial" model="completedDriverJobs" view-data="ViewData" />
+            </div>
+        }
+    }
 
-                        @if (currentUser?.UserType == "Driver")
-                        {
-                            if (item.Status == "Requested" && item.DriverId == null)
-                            {
-                                // Did I already offer?
-                                var alreadyOffered = Context.RideOffers.Any(o => o.RideId == item.Id && o.DriverId == currentUser.Id);
-                                if (alreadyOffered)
-                                {
-                                    <span class="badge bg-secondary">Offer Sent - Waiting on Passenger</span>
-                                }
-                                else
-                                {
-                                    <form asp-action="MakeOffer" method="post" class="d-inline">
-                                        <input type="hidden" name="rideId" value="@item.Id" />
-                                        <button type="submit" class="btn btn-sm btn-success">Offer to Drive</button>
-                                    </form>
-                                }
-                            }
-                            else if (item.Status == "Driver Assigned" && item.DriverId == currentUser.Id)
-                            {
-                                <form asp-action="CompleteRide" method="post" class="d-inline">
-                                    <input type="hidden" name="rideId" value="@item.Id" />
-                                    <button type="submit" class="btn btn-sm btn-dark">Mark as Completed</button>
-                                </form>
-                            }
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
 </div>

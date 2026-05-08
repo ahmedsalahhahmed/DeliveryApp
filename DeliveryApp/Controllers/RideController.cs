@@ -19,12 +19,19 @@ namespace DeliveryApp.Controllers
             _userManager = userManager;
         }
 
-        // GET: /Ride/Index
+        // ==========================================
+        // 1. DASHBOARD
+        // ==========================================
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Load rides and INCLUDE the Driver and Vehicle data so the passenger can see the license plate later!
+            if (user != null && user.UserType == "Driver")
+            {
+                ViewBag.HasVehicle = _context.Vehicles.Any(v => v.DriverId == user.Id);
+                ViewBag.IsBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+            }
+
             var rides = _context.Rides
                 .Include(r => r.Driver)
                 .ThenInclude(d => d.DriverVehicle)
@@ -33,56 +40,56 @@ namespace DeliveryApp.Controllers
             return View(rides);
         }
 
-        // GET: /Ride/RequestRide
-        // GET: RequestRide
+        // ==========================================
+        // 2. REQUEST A RIDE (PASSENGER)
+        // ==========================================
         [HttpGet]
         public async Task<IActionResult> RequestRide()
         {
             var user = await _userManager.GetUserAsync(User);
-
-            // 1. Check if they already have an active ride!
             var activeRide = _context.Rides.FirstOrDefault(r => r.PassengerId == user.Id && r.Status != "Completed" && r.Status != "Cancelled");
 
-            if (activeRide != null)
-            {
-                // If they have an active ride, force them back to the dashboard
-                return RedirectToAction(nameof(Index));
-            }
+            if (activeRide != null) return RedirectToAction(nameof(Index));
 
             return View(new Ride());
         }
 
-        // POST: RequestRide
         [HttpPost]
         public async Task<IActionResult> RequestRide(Ride ride)
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // 2. Double-check on POST just to be safe from hackers
             if (_context.Rides.Any(r => r.PassengerId == user.Id && r.Status != "Completed" && r.Status != "Cancelled"))
             {
                 return RedirectToAction(nameof(Index));
             }
 
             ride.PassengerId = user.Id;
+
+            // Ignore these so ModelState.IsValid passes!
             ModelState.Remove("PassengerId");
             ModelState.Remove("Passenger");
             ModelState.Remove("Driver");
+            ModelState.Remove("DriverId");
+            ModelState.Remove("Price");
+            ModelState.Remove("Status");
 
             if (ModelState.IsValid)
             {
+                double distance = ride.DistanceKm ?? 0;
+
                 if (ride.DeliveryType == "Package")
                 {
                     double weight = ride.EstimatedWeightKg ?? 0;
                     double volume = (ride.LengthCm ?? 0) * (ride.WidthCm ?? 0) * (ride.HeightCm ?? 0);
-                    ride.Price = 5.00m + (decimal)(weight * 2.0) + (decimal)(volume * 0.001);
+                    ride.Price = 5.00m + (decimal)(weight * 2.0) + (decimal)(volume * 0.001) + (decimal)(distance * 1.0);
                 }
                 else
                 {
-                    ride.Price = 15.00m;
+                    ride.Price = 5.00m + (decimal)(distance * 1.50);
                 }
 
-                ride.Status = "Requested"; // Changed back to "Requested" so drivers can see it
+                ride.Status = "Requested";
                 _context.Rides.Add(ride);
                 await _context.SaveChangesAsync();
 
@@ -91,118 +98,105 @@ namespace DeliveryApp.Controllers
             return View(ride);
         }
 
-        // GET: Ride/Edit/5
-        [HttpGet]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-            // SECURITY: Only find the ride if it belongs to the logged-in user!
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
-
-            if (ride == null) return NotFound();
-
-            // Business Rule: Don't let them edit if a driver is already on the way
-            if (ride.Status != "Requested")
-            {
-                // You could redirect to an error page, but for now, back to index
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(ride);
-        }
-
-        // POST: Ride/Edit/5
+        // ==========================================
+        // 3. DYNAMIC BIDDING SYSTEM
+        // ==========================================
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, Ride ride)
+        public async Task<IActionResult> MakeOffer(int rideId, decimal offeredPrice)
         {
-            if (id != ride.Id) return NotFound();
-
             var user = await _userManager.GetUserAsync(User);
-            ride.PassengerId = user.Id; // Re-assign to prevent hacking the form
+            var hasCar = _context.Vehicles.Any(v => v.DriverId == user.Id);
+            if (!hasCar) return RedirectToAction("RegisterCar", "Vehicle");
 
-            ModelState.Remove("PassengerId");
-            ModelState.Remove("Passenger");
-            ModelState.Remove("Driver");
-
-            if (ModelState.IsValid)
+            bool isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+            if (isBusy)
             {
-                _context.Rides.Update(ride);
-                await _context.SaveChangesAsync();
+                TempData["ErrorMessage"] = "You cannot bid on new jobs while you are on an active trip.";
                 return RedirectToAction(nameof(Index));
             }
-            return View(ride);
-        }
 
-        // GET: Ride/Delete/5
-        [HttpGet]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
-
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
             if (ride == null) return NotFound();
 
-            return View(ride);
-        }
+            // SECURITY: Prevent price gouging (Max 20% markup)
+            decimal maxAllowedPrice = Math.Round(ride.Price * 1.20m, 2);
 
-        // POST: Ride/Delete/5
-        // POST: Ride/Delete/5
-        [HttpPost, ActionName("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
-
-            if (ride != null)
+            if (offeredPrice < ride.Price || offeredPrice > maxAllowedPrice)
             {
-                // Find all offers attached to this specific ride
-                var attachedOffers = _context.RideOffers.Where(o => o.RideId == id).ToList();
+                TempData["ErrorMessage"] = $"Your offer was rejected. Bids must be strictly between ${ride.Price:0.00} and ${maxAllowedPrice:0.00}.";
+                return RedirectToAction(nameof(Index));
+            }
 
-                // If there are any offers, delete them so SQL Server doesn't panic
-                if (attachedOffers.Any())
-                {
-                    _context.RideOffers.RemoveRange(attachedOffers);
-                }
-                // ==========================================
-
-                // Now it is perfectly safe to delete the ride itself
-                _context.Rides.Remove(ride);
+            if (!_context.RideOffers.Any(o => o.RideId == rideId && o.DriverId == user.Id))
+            {
+                var offer = new RideOffer { RideId = rideId, DriverId = user.Id, OfferedPrice = offeredPrice };
+                _context.RideOffers.Add(offer);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Shows the list of available drivers
+
         [HttpGet]
-        public IActionResult SelectDriver(int rideId)
+        public IActionResult ViewOffers(int rideId)
         {
             var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
             if (ride == null) return NotFound();
 
-            // Find all Drivers who have registered a Vehicle
-            var availableDrivers = _context.Users
-                .Where(u => u.UserType == "Driver")
-                .Join(_context.Vehicles, user => user.Id, vehicle => vehicle.DriverId, (user, vehicle) => new AvailableDriverViewModel
+            var offers = _context.RideOffers
+                .Where(o => o.RideId == rideId)
+                .Select(o => new AvailableDriverViewModel
                 {
-                    DriverId = user.Id,
-                    Name = user.Name,
-                    ProfileImagePath = user.ProfileImagePath,
-                    CarMake = vehicle.Make,
-                    CarModel = vehicle.Model
+                    DriverId = o.Driver.Id,
+                    Name = o.Driver.Name,
+                    ProfileImagePath = o.Driver.ProfileImagePath,
+                    CarMake = _context.Vehicles.Where(v => v.DriverId == o.DriverId).Select(v => v.Make).FirstOrDefault() ?? "Unknown",
+                    CarModel = _context.Vehicles.Where(v => v.DriverId == o.DriverId).Select(v => v.Model).FirstOrDefault() ?? "Vehicle",
+
+                    OfferedPrice = o.OfferedPrice
                 }).ToList();
 
             ViewBag.RideId = rideId;
             ViewBag.CalculatedPrice = ride.Price;
 
-            return View(availableDrivers);
+            return View("SelectDriver", offers);
         }
 
-       
-      
+        [HttpPost]
+        public async Task<IActionResult> AssignDriver(int rideId, string driverId)
+        {
+            // ==========================================
+            // NEW: DOUBLE BOOKING DEFENSE
+            // Did another passenger hire this driver 5 seconds ago?
+            // ==========================================
+            bool isDriverBusy = _context.Rides.Any(r => r.DriverId == driverId && r.Status == "Driver Assigned");
+            if (isDriverBusy)
+            {
+                TempData["ErrorMessage"] = "Sorry, this driver just accepted another job! Please select a different driver.";
+                return RedirectToAction("ViewOffers", new { rideId = rideId });
+            }
+
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
+            var acceptedOffer = _context.RideOffers.FirstOrDefault(o => o.RideId == rideId && o.DriverId == driverId);
+
+            if (ride != null && acceptedOffer != null)
+            {
+                ride.DriverId = driverId;
+                ride.Status = "Driver Assigned";
+                ride.Price = acceptedOffer.OfferedPrice;
+
+                // 1. Remove all competing offers for THIS ride (since it is now claimed)
+                var relatedOffers = _context.RideOffers.Where(o => o.RideId == rideId);
+                _context.RideOffers.RemoveRange(relatedOffers);
+
+                // 2. AUTO-CLEANUP: Remove this driver's bids from all OTHER rides!
+                var driversOtherBids = _context.RideOffers.Where(o => o.DriverId == driverId);
+                _context.RideOffers.RemoveRange(driversOtherBids);
+
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
+        }
 
         [HttpPost]
         public async Task<IActionResult> CompleteRide(int rideId)
@@ -218,71 +212,102 @@ namespace DeliveryApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: Driver offers to take a ride
-        [HttpPost]
-        public async Task<IActionResult> MakeOffer(int rideId)
+        // ==========================================
+        // 4. EDIT & DELETE RIDES
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> Edit(int? id)
         {
+            if (id == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
+            if (ride == null) return NotFound();
+            if (ride.Status != "Requested") return RedirectToAction(nameof(Index));
+
+            return View(ride);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id, Ride ride)
+        {
+            if (id != ride.Id) return NotFound();
+
             var user = await _userManager.GetUserAsync(User);
 
-            // Check if they already made an offer
-            if (!_context.RideOffers.Any(o => o.RideId == rideId && o.DriverId == user.Id))
+           
+            var originalRide = _context.Rides.AsNoTracking().FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
+            // 2. Check if the ride exists AND if it is still safe to edit
+            if (originalRide == null || originalRide.Status != "Requested")
             {
-                var offer = new RideOffer { RideId = rideId, DriverId = user.Id };
-                _context.RideOffers.Add(offer);
-                await _context.SaveChangesAsync();
+                // Hacker blocked! They tried to edit a ride that is already in progress or completed.
+                return Unauthorized();
             }
-            return RedirectToAction(nameof(Index));
+            
+
+            ride.PassengerId = user.Id;
+
+            // Tell C# to ignore missing fields from the HTML form
+            ModelState.Remove("PassengerId");
+            ModelState.Remove("Passenger");
+            ModelState.Remove("Driver");
+            ModelState.Remove("Price");
+            ModelState.Remove("Status");
+
+            if (ModelState.IsValid)
+            {
+                ride.Price = originalRide.Price;
+                ride.Status = originalRide.Status;
+                ride.DistanceKm = originalRide.DistanceKm; // Protect the distance too!
+
+                _context.Rides.Update(ride);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(ride);
         }
 
-        // GET: Passenger views the drivers who made an offer
-        // GET: Passenger clicks "View Offers"
         [HttpGet]
-        public IActionResult ViewOffers(int rideId)
+        public async Task<IActionResult> Delete(int? id)
         {
-            // 1. Get the ride so we can show the price
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
+            if (id == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
             if (ride == null) return NotFound();
 
-            // 2. Find all drivers who made an offer on this specific ride
-            var offers = _context.RideOffers
-                .Where(o => o.RideId == rideId)
-                .Select(o => new AvailableDriverViewModel
-                {
-                    DriverId = o.Driver.Id,
-                    Name = o.Driver.Name,
-                    ProfileImagePath = o.Driver.ProfileImagePath,
-                    // Look up the vehicle for this specific driver
-                    CarMake = _context.Vehicles.FirstOrDefault(v => v.DriverId == o.DriverId).Make,
-                    CarModel = _context.Vehicles.FirstOrDefault(v => v.DriverId == o.DriverId).Model
-                }).ToList();
-
-            ViewBag.RideId = rideId;
-            ViewBag.CalculatedPrice = ride.Price;
-
-            return View("SelectDriver", offers);
+            return View(ride);
         }
 
-        // POST: Passenger clicks "Accept Driver" on a specific card
-        [HttpPost]
-        public async Task<IActionResult> AssignDriver(int rideId, string driverId)
+        [HttpPost, ActionName("Delete")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
+            var user = await _userManager.GetUserAsync(User);
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
             if (ride != null)
             {
-                // 1. Lock in the driver and update the status!
-                ride.DriverId = driverId;
-                ride.Status = "Driver Assigned";
 
-                // 2. Clean up the database! Delete all offers for this ride since it is now taken.
-                var relatedOffers = _context.RideOffers.Where(o => o.RideId == rideId);
-                _context.RideOffers.RemoveRange(relatedOffers);
+                if (ride.Status != "Requested")
+                {
+                    TempData["ErrorMessage"] = "You cannot cancel a ride after a driver has been assigned!";
+                    return RedirectToAction(nameof(Index));
+                }
 
+                var attachedOffers = _context.RideOffers.Where(o => o.RideId == id).ToList();
+                if (attachedOffers.Any())
+                {
+                    _context.RideOffers.RemoveRange(attachedOffers);
+                }
+
+                _context.Rides.Remove(ride);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
-
-
-
     }
 }

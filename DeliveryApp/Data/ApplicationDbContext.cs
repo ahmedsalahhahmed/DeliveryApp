@@ -36,6 +36,10 @@ namespace DeliveryApp.Data
                 .WithMany()
                 .HasForeignKey(ro => ro.DriverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Vehicle>()
+                .HasIndex(v => v.LicensePlate)
+                .IsUnique();
         }
 
     }

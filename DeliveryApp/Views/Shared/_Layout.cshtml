@@ -26,7 +26,14 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Admin Panel</a>
+                            </li>
+                        }
+
+                        @if (User.Identity.IsAuthenticated && !User.IsInRole("Admin"))
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
                             if (currentUser != null)

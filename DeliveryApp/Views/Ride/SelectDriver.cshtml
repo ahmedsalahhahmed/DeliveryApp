@@ -37,13 +37,15 @@
                             }
 
                             <h4 class="card-title fw-bold">@driver.Name</h4>
-                            <p class="card-text text-muted mb-4">Drives a <strong>@driver.CarMake @driver.CarModel</strong></p>
+                            <p class="card-text text-muted mb-2">Drives a <strong>@driver.CarMake @driver.CarModel</strong></p>
+
+                            <h2 class="text-success fw-bold mb-4">$@driver.OfferedPrice.ToString("0.00")</h2>
 
                             <div class="mt-auto">
                                 <form asp-action="AssignDriver" method="post">
                                     <input type="hidden" name="rideId" value="@ViewBag.RideId" />
                                     <input type="hidden" name="driverId" value="@driver.DriverId" />
-                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Accept Driver</button>
+                                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Accept Offer</button>
                                 </form>
                             </div>
 

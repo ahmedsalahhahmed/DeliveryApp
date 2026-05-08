@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Admin Control Panel";
+}
+
+<div class="container mt-5">
+    <h1 class="text-danger fw-bold">Admin Control Panel</h1>
+    <hr />
+    <div class="row text-center mt-4">
+        <div class="col-md-4">
+            <div class="card shadow border-primary">
+                <div class="card-body">
+                    <h3>👥 Total Users</h3>
+                    <h2 class="text-primary fw-bold">@ViewBag.TotalUsers</h2>
+                    <a asp-action="AllUsers" class="btn btn-primary mt-2">Manage Users</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow border-success">
+                <div class="card-body">
+                    <h3>🚗 Total Rides</h3>
+                    <h2 class="text-success fw-bold">@ViewBag.TotalRides</h2>
+                    <a asp-action="AllRides" class="btn btn-success mt-2">View All Rides</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow border-dark">
+                <div class="card-body">
+                    <h3>💰 Total Platform Value</h3>
+                    <h2 class="text-dark fw-bold">$@ViewBag.TotalRevenue.ToString("0.00")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
