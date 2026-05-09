@@ -230,63 +230,7 @@ namespace DeliveryApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ==========================================
-        // 4. EDIT & DELETE RIDES
-        // ==========================================
-        [HttpGet]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
-
-            if (ride == null) return NotFound();
-            if (ride.Status != "Requested") return RedirectToAction(nameof(Index));
-
-            return View(ride);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Edit(int id, Ride ride)
-        {
-            if (id != ride.Id) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-
-           
-            var originalRide = _context.Rides.AsNoTracking().FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
-
-            // 2. Check if the ride exists AND if it is still safe to edit
-            if (originalRide == null || originalRide.Status != "Requested")
-            {
-                // Hacker blocked! They tried to edit a ride that is already in progress or completed.
-                return Unauthorized();
-            }
-            
-
-            ride.PassengerId = user.Id;
-
-            // Tell C# to ignore missing fields from the HTML form
-            ModelState.Remove("PassengerId");
-            ModelState.Remove("Passenger");
-            ModelState.Remove("Driver");
-            ModelState.Remove("Price");
-            ModelState.Remove("Status");
-
-            if (ModelState.IsValid)
-            {
-                ride.Price = originalRide.Price;
-                ride.Status = originalRide.Status;
-                ride.DistanceKm = originalRide.DistanceKm; // Protect the distance too!
-
-                _context.Rides.Update(ride);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(ride);
-        }
+       
 
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
