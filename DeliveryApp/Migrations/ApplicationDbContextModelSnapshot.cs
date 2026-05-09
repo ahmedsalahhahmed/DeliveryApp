@@ -120,6 +120,13 @@ namespace DeliveryApp.Migrations
                     b.Property<string>("DriverId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("DriverRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DriverReview")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<double?>("EstimatedWeightKg")
                         .HasColumnType("float");
 

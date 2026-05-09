@@ -1,0 +1,41 @@
+﻿@model DeliveryApp.Models.Ride
+@{
+    ViewData["Title"] = "Rate Your Driver";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-warning">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h3 class="fw-bold mb-0">⭐ Rate Your Trip</h3>
+                </div>
+                <div class="card-body text-center p-5">
+                    <h5 class="text-muted mb-4">How was your ride with <strong>@Model.Driver?.Name</strong>?</h5>
+
+                    <form asp-action="RateDriver" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold fs-5">Select Rating</label>
+                            <select name="rating" class="form-select form-select-lg text-center fw-bold text-warning" required>
+                                <option value="5">⭐⭐⭐⭐⭐ (5) - Excellent!</option>
+                                <option value="4">⭐⭐⭐⭐ (4) - Great</option>
+                                <option value="3">⭐⭐⭐ (3) - Okay</option>
+                                <option value="2">⭐⭐ (2) - Needs Improvement</option>
+                                <option value="1">⭐ (1) - Terrible</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold">Leave a Comment (Optional)</label>
+                            <textarea name="review" class="form-control" rows="3" placeholder="Clean car, drove safely, etc..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow">Submit Review</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

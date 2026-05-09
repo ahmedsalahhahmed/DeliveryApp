@@ -14,6 +14,7 @@ namespace DeliveryApp.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
 
+        // We inject BOTH the database and the UserManager
         public AdminController(ApplicationDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
@@ -23,11 +24,38 @@ namespace DeliveryApp.Controllers
         // GET: Admin/Index (Dashboard)
         public IActionResult Index()
         {
+            // 1. ORIGINAL METRICS (Revenue, Totals)
             ViewBag.TotalUsers = _context.Users.Count();
             ViewBag.TotalRides = _context.Rides.Count();
             ViewBag.TotalRevenue = _context.Rides.Where(r => r.Status == "Completed").Sum(r => r.Price);
 
-            return View();
+            // 2. NEW METRICS (Driver Leaderboard)
+            var driverStats = _context.Rides
+                .Include(r => r.Driver)
+                .Where(r => r.DriverRating != null)
+                .AsEnumerable()
+                .GroupBy(r => r.Driver.Name)
+                .Select(g => new
+                {
+                    DriverName = g.Key,
+                    AverageRating = g.Average(r => r.DriverRating.Value),
+                    TotalTrips = g.Count()
+                })
+                .OrderByDescending(s => s.AverageRating)
+                .ToList();
+
+            ViewBag.DriverStats = driverStats;
+
+            // 3. RECENT REVIEWS (Passed as the main Model)
+            var ratedRides = _context.Rides
+                .Include(r => r.Driver)
+                .Include(r => r.Passenger)
+                .Where(r => r.DriverRating != null)
+                .OrderByDescending(r => r.Id)
+                .Take(10) // Just grab the 10 most recent reviews so the page doesn't get too long
+                .ToList();
+
+            return View(ratedRides);
         }
 
         // GET: Admin/AllUsers

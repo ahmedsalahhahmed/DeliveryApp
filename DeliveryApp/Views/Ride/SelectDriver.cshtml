@@ -37,6 +37,21 @@
                             }
 
                             <h4 class="card-title fw-bold">@driver.Name</h4>
+
+                            <div class="mb-2">
+                                @if (driver.TotalReviews > 0)
+                                {
+                                    <span class="badge bg-warning text-dark fs-6 shadow-sm">
+                                        ⭐ @driver.AverageRating.ToString("0.0")
+                                    </span>
+                                    <small class="text-muted ms-1">(@driver.TotalReviews reviews)</small>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No reviews yet</span>
+                                }
+                            </div>
+
                             <p class="card-text text-muted mb-2">Drives a <strong>@driver.CarMake @driver.CarModel</strong></p>
 
                             <h2 class="text-success fw-bold mb-4">$@driver.OfferedPrice.ToString("0.00")</h2>

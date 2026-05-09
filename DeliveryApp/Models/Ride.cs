@@ -44,5 +44,12 @@ namespace DeliveryApp.Models
         public decimal Price { get; set; }
         public double? DistanceKm { get; set; }
         //[cite: 8]
+
+        // NEW: Ratings System
+        [Range(1, 5)]
+        public int? DriverRating { get; set; }
+
+        [MaxLength(500)]
+        public string? DriverReview { get; set; }
     }
 }

@@ -9,5 +9,9 @@
         public string CarModel { get; set; }
 
         public decimal OfferedPrice { get; set; }
+
+        // NEW: Show their reputation!
+        public double AverageRating { get; set; }
+        public int TotalReviews { get; set; }
     }
 }

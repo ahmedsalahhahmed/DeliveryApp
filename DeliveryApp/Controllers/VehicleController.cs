@@ -54,7 +54,7 @@ namespace DeliveryApp.Controllers
             if (plateExists)
             {
                 // This attaches a red error message directly to the License Plate text box!
-                ModelState.AddModelError("LicensePlate", "هذه اللوحة مسجلة بالفعل في النظام (This plate is already registered).");
+                ModelState.AddModelError("LicensePlate", "This plate is already registered");
             }
 
             if (ModelState.IsValid)
@@ -91,6 +91,14 @@ namespace DeliveryApp.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null || user.UserType != "Driver") return RedirectToAction("Index", "Ride");
 
+
+            var isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+            if (isBusy)
+            {
+                TempData["ErrorMessage"] = "You cannot edit your vehicle details while you have an active passenger!";
+                return RedirectToAction("Index", "Ride");
+            }
+
             vehicle.DriverId = user.Id;
             ModelState.Remove("DriverId");
             ModelState.Remove("Driver");
@@ -123,8 +131,16 @@ namespace DeliveryApp.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == id && v.DriverId == user.Id);
 
+            // NEW SECURITY CHECK: Is the driver on a trip right now?
+            var isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+            if (isBusy)
+            {
+                TempData["ErrorMessage"] = "You cannot delete your vehicle while you have an active passenger!";
+                return RedirectToAction("Index", "Ride");
+            }
+
+            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == id && v.DriverId == user.Id);
             if (vehicle != null)
             {
                 _context.Vehicles.Remove(vehicle);
@@ -132,6 +148,7 @@ namespace DeliveryApp.Controllers
             }
             return RedirectToAction("Index", "Ride");
         }
+
 
         // GET: Vehicle/Manage
         // This is a "smart" button that figures out where the driver needs to go

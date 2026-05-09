@@ -105,6 +105,17 @@
                         <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger w-100">Cancel</a>
                     }
 
+                    @if (currentUser?.UserType == "Passenger" && item.Status == "Completed" && item.DriverRating == null)
+                    {
+                        <a asp-action="RateDriver" asp-route-id="@item.Id" class="btn btn-warning fw-bold w-100 shadow-sm text-dark">
+                            ⭐ Rate Driver
+                        </a>
+                    }
+                    else if (currentUser?.UserType == "Passenger" && item.DriverRating != null)
+                    {
+                        <span class="badge bg-light text-dark border w-100 py-2">You rated: @item.DriverRating ⭐</span>
+                    }
+
                     @if (currentUser?.UserType == "Driver")
                     {
                         if (item.Status == "Requested" && item.DriverId == null)
@@ -163,6 +174,23 @@
                                 <input type="hidden" name="rideId" value="@item.Id" />
                                 <button type="submit" class="btn btn-dark fw-bold w-100 py-2 shadow-sm">Mark as Completed</button>
                             </form>
+                        }
+                        else if (item.Status == "Completed" && item.DriverId == currentUser.Id)
+                        {
+                            if (item.DriverRating != null)
+                            {
+                                <div class="p-2 border border-warning rounded bg-light mt-2 text-start shadow-sm">
+                                    <span class="badge bg-warning text-dark fs-6 w-100 mb-1">You earned: @item.DriverRating ⭐</span>
+                                    @if (!string.IsNullOrEmpty(item.DriverReview))
+                                    {
+                                        <small class="fst-italic text-muted d-block mt-1">"@item.DriverReview"</small>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary text-white w-100 py-2 mt-2">Waiting for passenger to rate...</span>
+                            }
                         }
                     }
                 </td>

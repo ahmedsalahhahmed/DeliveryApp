@@ -30,6 +30,23 @@ namespace DeliveryApp.Controllers
             {
                 ViewBag.HasVehicle = _context.Vehicles.Any(v => v.DriverId == user.Id);
                 ViewBag.IsBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
+
+                
+                var myRatings = _context.Rides
+                    .Where(r => r.DriverId == user.Id && r.DriverRating != null)
+                    .Select(r => (double?)r.DriverRating)
+                    .ToList();
+
+                if (myRatings.Any())
+                {
+                    ViewBag.AverageRating = myRatings.Average() ?? 0.0;
+                    ViewBag.TotalReviews = myRatings.Count();
+                }
+                else
+                {
+                    ViewBag.AverageRating = 0.0;
+                    ViewBag.TotalReviews = 0;
+                }
             }
 
             var rides = _context.Rides
@@ -155,8 +172,14 @@ namespace DeliveryApp.Controllers
                     ProfileImagePath = o.Driver.ProfileImagePath,
                     CarMake = _context.Vehicles.Where(v => v.DriverId == o.DriverId).Select(v => v.Make).FirstOrDefault() ?? "Unknown",
                     CarModel = _context.Vehicles.Where(v => v.DriverId == o.DriverId).Select(v => v.Model).FirstOrDefault() ?? "Vehicle",
+                    OfferedPrice = o.OfferedPrice,
 
-                    OfferedPrice = o.OfferedPrice
+                    
+                    AverageRating = _context.Rides.Where(r => r.DriverId == o.DriverId && r.DriverRating != null)
+                                                  .Select(r => (double?)r.DriverRating)
+                                                  .Average() ?? 0.0,
+
+                    TotalReviews = _context.Rides.Count(r => r.DriverId == o.DriverId && r.DriverRating != null)
                 }).ToList();
 
             ViewBag.RideId = rideId;
@@ -304,5 +327,37 @@ namespace DeliveryApp.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+
+        // GET: Passenger clicks "Rate Driver"
+        [HttpGet]
+        public async Task<IActionResult> RateDriver(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var ride = _context.Rides.Include(r => r.Driver).FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
+            if (ride == null || ride.Status != "Completed") return NotFound();
+            if (ride.DriverRating != null) return RedirectToAction(nameof(Index)); // Already rated!
+
+            return View(ride);
+        }
+
+        // POST: Passenger submits the stars
+        [HttpPost]
+        public async Task<IActionResult> RateDriver(int id, int rating, string review)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var ride = _context.Rides.FirstOrDefault(r => r.Id == id && r.PassengerId == user.Id);
+
+            if (ride != null && ride.Status == "Completed")
+            {
+                // Lock the rating between 1 and 5 just in case of hackers!
+                ride.DriverRating = Math.Clamp(rating, 1, 5);
+                ride.DriverReview = review;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 }
