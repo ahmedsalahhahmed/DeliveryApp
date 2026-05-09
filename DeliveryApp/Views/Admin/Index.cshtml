@@ -54,7 +54,12 @@
                     @foreach (var stat in ViewBag.DriverStats)
                     {
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <strong class="text-dark">@stat.DriverName</strong>
+
+                            <div>
+                                <strong class="text-dark">@stat.DriverName</strong><br />
+                                <small class="text-muted">@stat.CarModel</small>
+                            </div>
+
                             <span>
                                 <span class="badge bg-warning text-dark rounded-pill shadow-sm">⭐ @stat.AverageRating.ToString("0.0")</span>
                                 <small class="text-muted ms-1">(@stat.TotalTrips)</small>

@@ -32,12 +32,19 @@ namespace DeliveryApp.Controllers
             // 2. NEW METRICS (Driver Leaderboard)
             var driverStats = _context.Rides
                 .Include(r => r.Driver)
+                .ThenInclude(d => d.DriverVehicle)
                 .Where(r => r.DriverRating != null)
                 .AsEnumerable()
-                .GroupBy(r => r.Driver.Name)
+                .GroupBy(r => new {
+                    r.DriverId,
+                    r.Driver.Name,
+                    CarMake = r.Driver.DriverVehicle != null ? r.Driver.DriverVehicle.Make : "Unknown",
+                    CarModel = r.Driver.DriverVehicle != null ? r.Driver.DriverVehicle.Model : "Vehicle"
+                })
                 .Select(g => new
                 {
-                    DriverName = g.Key,
+                    DriverName = g.Key.Name,
+                    CarModel = g.Key.CarMake + " " + g.Key.CarModel,
                     AverageRating = g.Average(r => r.DriverRating.Value),
                     TotalTrips = g.Count()
                 })
