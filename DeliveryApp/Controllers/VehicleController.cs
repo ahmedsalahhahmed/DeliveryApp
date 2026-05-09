@@ -79,6 +79,9 @@ namespace DeliveryApp.Controllers
             var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == id && v.DriverId == user.Id);
             if (vehicle == null) return NotFound();
 
+            ViewBag.CarMakes = GetCarMakes();
+
+
             return View(vehicle);
         }
 
@@ -109,6 +112,8 @@ namespace DeliveryApp.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index", "Ride");
             }
+
+
             return View(vehicle);
         }
 
