@@ -65,11 +65,51 @@ namespace DeliveryApp.Controllers
             return View(ratedRides);
         }
 
-        // GET: Admin/AllUsers
+        // GET: Admin/AllUsers — excludes Admin accounts, includes ride counts + ban state
         public async Task<IActionResult> AllUsers()
         {
-            var users = await _userManager.Users.ToListAsync();
-            return View(users);
+            // Only show Passengers and Drivers — not other admins
+            var users = await _userManager.Users
+                .Where(u => u.UserType == "Passenger" || u.UserType == "Driver")
+                .ToListAsync();
+
+            var viewModels = users.Select(u => new AdminUserViewModel
+            {
+                User = u,
+                PassengerRideCount = _context.Rides.Count(r => r.PassengerId == u.Id),
+                DriverRideCount = _context.Rides.Count(r => r.DriverId == u.Id),
+                IsBanned = u.LockoutEnabled && u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
+            }).ToList();
+
+            return View(viewModels);
+        }
+
+        // POST: Admin/BanUser
+        [HttpPost]
+        public async Task<IActionResult> BanUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user != null)
+            {
+                await _userManager.SetLockoutEnabledAsync(user, true);
+                // Lock them out for 100 years — effectively permanent
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+                TempData["SuccessMessage"] = $"{user.Name} has been banned.";
+            }
+            return RedirectToAction(nameof(AllUsers));
+        }
+
+        // POST: Admin/UnbanUser
+        [HttpPost]
+        public async Task<IActionResult> UnbanUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user != null)
+            {
+                await _userManager.SetLockoutEndDateAsync(user, null);
+                TempData["SuccessMessage"] = $"{user.Name} has been unbanned.";
+            }
+            return RedirectToAction(nameof(AllUsers));
         }
 
         // GET: Admin/AllRides
@@ -82,6 +122,24 @@ namespace DeliveryApp.Controllers
                 .ToListAsync();
 
             return View(rides);
+        }
+
+        // POST: Admin/CancelRide
+        [HttpPost]
+        public async Task<IActionResult> CancelRide(int id)
+        {
+            var ride = await _context.Rides.FindAsync(id);
+            if (ride != null && ride.Status != "Completed" && ride.Status != "Cancelled")
+            {
+                // Clean up any pending offers on this ride before cancelling
+                var offers = _context.RideOffers.Where(o => o.RideId == id);
+                _context.RideOffers.RemoveRange(offers);
+
+                ride.Status = "Cancelled";
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Ride #{id} has been cancelled.";
+            }
+            return RedirectToAction(nameof(AllRides));
         }
     }
 }
