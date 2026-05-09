@@ -118,42 +118,7 @@ namespace DeliveryApp.Controllers
         }
 
         // GET: Vehicle/Delete/5
-        [HttpGet]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var user = await _userManager.GetUserAsync(User);
-            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == id && v.DriverId == user.Id);
-
-            if (vehicle == null) return NotFound();
-
-            return View(vehicle);
-        }
-
-        // POST: Vehicle/Delete/5
-        [HttpPost, ActionName("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var user = await _userManager.GetUserAsync(User);
-
-            // NEW SECURITY CHECK: Is the driver on a trip right now?
-            var isBusy = _context.Rides.Any(r => r.DriverId == user.Id && r.Status == "Driver Assigned");
-            if (isBusy)
-            {
-                TempData["ErrorMessage"] = "You cannot delete your vehicle while you have an active passenger!";
-                return RedirectToAction("Index", "Ride");
-            }
-
-            var vehicle = _context.Vehicles.FirstOrDefault(v => v.Id == id && v.DriverId == user.Id);
-            if (vehicle != null)
-            {
-                _context.Vehicles.Remove(vehicle);
-                await _context.SaveChangesAsync();
-            }
-            return RedirectToAction("Index", "Ride");
-        }
-
+        
 
         // GET: Vehicle/Manage
         // This is a "smart" button that figures out where the driver needs to go

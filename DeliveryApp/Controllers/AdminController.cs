@@ -107,6 +107,7 @@ namespace DeliveryApp.Controllers
             if (user != null)
             {
                 await _userManager.SetLockoutEndDateAsync(user, null);
+                await _userManager.UpdateSecurityStampAsync(user);
                 TempData["SuccessMessage"] = $"{user.Name} has been unbanned.";
             }
             return RedirectToAction(nameof(AllUsers));

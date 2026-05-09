@@ -15,6 +15,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>() // <--- ADD THIS EXACT PIECE!
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -36,7 +38,27 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var userManager = context.RequestServices.GetRequiredService<UserManager<AppUser>>();
+        var signInManager = context.RequestServices.GetRequiredService<SignInManager<AppUser>>();
+
+        var user = await userManager.GetUserAsync(context.User);
+        if (user != null && await userManager.IsLockedOutAsync(user))
+        {
+            // Kick them out and send to login page
+            await signInManager.SignOutAsync();
+            context.Response.Redirect("/Identity/Account/Login");
+            return; // Stop processing this request
+        }
+    }
+    await next();
+});
 
 app.MapControllerRoute(
     name: "default",
