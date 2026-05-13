@@ -25,7 +25,7 @@
         activeDriverJobs = Model.Where(r => r.DriverId == currentUser.Id && r.Status == "Driver Assigned").ToList();
         availableJobs = Model.Where(r => r.Status == "Requested").OrderByDescending(r => r.Id).ToList();
 
-        // NEW: Filter out the jobs this driver has successfully finished
+        
         completedDriverJobs = Model.Where(r => r.DriverId == currentUser.Id && r.Status == "Completed").OrderByDescending(r => r.Id).ToList();
     }
 }
@@ -49,9 +49,7 @@
         </div>
     }
 
-    @* ========================================================================= *@
-    @* PASSENGER VIEW *@
-    @* ========================================================================= *@
+    @* Passenger View *@
     @if (currentUser?.UserType == "Passenger")
     {
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -67,14 +65,10 @@
         </div>
     }
 
-    @* ========================================================================= *@
-    @* DRIVER VIEW *@
-    @* ========================================================================= *@
+    @* Driver View *@
     @if (currentUser?.UserType == "Driver")
     {
-        // ==========================================
-        // NEW: DRIVER REPUTATION CARD
-        // ==========================================
+        //Reputation Card
         <div class="row mb-4 mt-2">
             <div class="col-md-5">
                 <div class="card shadow-sm border-warning">
@@ -98,9 +92,8 @@
                 </div>
             </div>
         </div>
-        // ==========================================
 
-        // SECTION 1: MY ACTIVE JOB
+        // My Active Job
         @if (activeDriverJobs.Any())
         {
             <div class="card border-success mb-5 shadow-sm">
@@ -115,7 +108,7 @@
             </div>
         }
 
-        // SECTION 2: THE AVAILABLE JOBS BOARD
+        // Available Jobs Board
         <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
             <h2>🌍 Available Jobs Board</h2>
             <span class="badge bg-primary fs-6">@availableJobs.Count Open Jobs</span>

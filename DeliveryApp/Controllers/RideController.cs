@@ -19,9 +19,7 @@ namespace DeliveryApp.Controllers
             _userManager = userManager;
         }
 
-        // ==========================================
-        // 1. DASHBOARD
-        // ==========================================
+        // Dashboard
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -57,9 +55,7 @@ namespace DeliveryApp.Controllers
             return View(rides);
         }
 
-        // ==========================================
-        // 2. REQUEST A RIDE (PASSENGER)
-        // ==========================================
+        // Request a Ride (Passenger)
         [HttpGet]
         public async Task<IActionResult> RequestRide()
         {
@@ -115,15 +111,13 @@ namespace DeliveryApp.Controllers
             return View(ride);
         }
 
-        // ==========================================
-        // 3. DYNAMIC BIDDING SYSTEM
-        // ==========================================
+        // Bidding System
         [HttpPost]
         public async Task<IActionResult> MakeOffer(int rideId, decimal offeredPrice)
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // 1. Do they have a car?
+            // Do they have a car?
             var hasCar = _context.Vehicles.Any(v => v.DriverId == user.Id);
             if (!hasCar) return RedirectToAction("RegisterCar", "Vehicle");
 

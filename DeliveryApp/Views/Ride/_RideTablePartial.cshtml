@@ -4,7 +4,6 @@
 @inject ApplicationDbContext Context
 
 @{
-    // Safely grab the variables passed down from the main Index view
     var currentUser = ViewData["CurrentUser"] as AppUser;
     bool hasVehicle = ViewBag.HasVehicle ?? false;
     bool isBusy = ViewBag.IsBusy ?? false;
