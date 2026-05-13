@@ -82,17 +82,19 @@ using (var scope = app.Services.CreateScope())
     }
 
     // 2. Assign the Admin Role to YOUR email
-    // CHANGE THIS TO YOUR ACTUAL REGISTRATION EMAIL!
-    var adminEmail = "ahmed@gmail.com";
+    
+    var adminEmail = app.Configuration.GetValue<string>("AppSettings:AdminEmail");
 
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser != null)
+    if (!string.IsNullOrEmpty(adminEmail))
     {
-        // If your user exists, give them the admin badge!
-        var hasAdminRole = await userManager.IsInRoleAsync(adminUser, "Admin");
-        if (!hasAdminRole)
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser != null)
         {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            var hasAdminRole = await userManager.IsInRoleAsync(adminUser, "Admin");
+            if (!hasAdminRole)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
         }
     }
 }

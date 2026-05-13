@@ -30,7 +30,7 @@
                     <th>Price</th>
                     <th>Rating</th>
                     <th>Comment</th>
-                    <th class="text-center">Actions</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -85,22 +85,7 @@
                                 <span class="text-muted">—</span>
                             }
                         </td>
-                        <td class="text-center">
-                            @if (canCancel)
-                            {
-                                <form asp-action="CancelRide" method="post" class="d-inline"
-                                      onsubmit="return confirm('Cancel Ride #@item.Id? This cannot be undone.');">
-                                    <input type="hidden" name="id" value="@item.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        ✕ Cancel
-                                    </button>
-                                </form>
-                            }
-                            else
-                            {
-                                <span class="text-muted small">—</span>
-                            }
-                        </td>
+                       
                     </tr>
                 }
             </tbody>
