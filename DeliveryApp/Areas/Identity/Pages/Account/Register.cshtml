@@ -114,11 +114,11 @@
             if (userTypeSelect.value === 'Driver') {
                 // Make it required and add a red asterisk
                 profilePicInput.setAttribute('required', 'required');
-                profilePicLabel.innerHTML = 'Upload Profile Picture or ID <span class="text-danger">*</span>';
+                profilePicLabel.innerHTML = 'Upload Profile <span class="text-danger">*</span>';
             } else {
                 // Make it optional and remove the asterisk
                 profilePicInput.removeAttribute('required');
-                profilePicLabel.innerHTML = 'Upload Profile Picture or ID (Optional)';
+                profilePicLabel.innerHTML = 'Upload Profile Picture';
             }
         }
 
