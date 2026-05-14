@@ -97,8 +97,6 @@ namespace DeliveryApp.Controllers
 
         // POST: Admin/BanUser
         [HttpPost]
-        // POST: Admin/BanUser
-        [HttpPost]
         public async Task<IActionResult> BanUser(string id)
         {
             var user = await _userManager.FindByIdAsync(id);

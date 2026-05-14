@@ -134,7 +134,7 @@ namespace DeliveryApp.Controllers
             var ride = _context.Rides.FirstOrDefault(r => r.Id == rideId);
             if (ride == null) return NotFound();
 
-            // SECURITY: Prevent price gouging (Max 20% markup)
+            //Prevent price gouging (Max 20% markup)
             decimal maxAllowedPrice = Math.Round(ride.Price * 1.20m, 2);
             if (offeredPrice < ride.Price || offeredPrice > maxAllowedPrice)
             {
