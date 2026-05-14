@@ -22,9 +22,9 @@ namespace DeliveryApp.Models
         public string Color { get; set; }
 
 
-        [Required(ErrorMessage = "License plate is required.")]
-        [RegularExpression(@"^[\u0600-\u06FFa-zA-Z\s\-]{2,8}[0-9\u0660-\u0669]{3,4}$",
-        ErrorMessage = "Invalid format. Use 2-3 letters (Arabic or English) followed by 3-4 numbers.")]
+        [RegularExpression(@"^[a-zA-Z\s\-]{2,8}[0-9]{3,4}$",
+        ErrorMessage = "Invalid format. Use 2-3 English letters followed by 3-4 numbers (e.g., ABC 1234).")]
+        [Display(Name = "License Plate")] 
         public string LicensePlate { get; set; }
     }
 }

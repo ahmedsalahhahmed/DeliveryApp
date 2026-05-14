@@ -42,11 +42,13 @@
 
                         <div class="mb-3">
                             <label asp-for="LicensePlate" class="control-label fw-bold">License Plate Number</label>
-                            <input asp-for="LicensePlate" class="form-control fw-bold"
-                                   placeholder="أ ب ج 1234 or ABC 123"
-                                   pattern="^[\u0600-\u06FFa-zA-Z\s\-]{2,8}[0-9\u0660-\u0669]{3,4}$"
-                                   title="2-3 letters followed by 3-4 numbers" />
-                            <div class="form-text">Example: أ ب ج 1234 or ABC 123</div>
+
+                            <input asp-for="LicensePlate" class="form-control fw-bold text-uppercase"
+                                   placeholder="ABC 1234"
+                                   pattern="^[a-zA-Z\s\-]{2,8}[0-9]{3,4}$"
+                                   title="2-3 English letters followed by 3-4 numbers" />
+
+                            <div class="form-text">Example: ABC 1234 (English letters and numbers only)</div>
                             <span asp-validation-for="LicensePlate" class="text-danger"></span>
                         </div>
 

@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliveryApp.Controllers
 {
-    // SECURITY: If anyone without the Admin role tries to access this, they get blocked!
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
