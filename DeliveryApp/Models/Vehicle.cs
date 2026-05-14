@@ -22,9 +22,9 @@ namespace DeliveryApp.Models
         public string Color { get; set; }
 
 
-        [RegularExpression(@"^[a-zA-Z\s\-]{2,8}[0-9]{3,4}$",
-        ErrorMessage = "Invalid format. Use 2-3 English letters followed by 3-4 numbers (e.g., ABC 1234).")]
-        [Display(Name = "License Plate")] 
+        [RegularExpression(@"^[a-zA-Z]{3,4}[ -]?[0-9]{3,4}$",
+        ErrorMessage = "Invalid format. Use 3-4 English letters followed by 3-4 numbers (e.g., ABC 1234, ABC-1234).")]
+       
         public string LicensePlate { get; set; }
     }
 }

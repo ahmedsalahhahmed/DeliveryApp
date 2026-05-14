@@ -45,7 +45,7 @@
 
                             <input asp-for="LicensePlate" class="form-control fw-bold text-uppercase"
                                    placeholder="ABC 1234"
-                                   pattern="^[a-zA-Z\s\-]{2,8}[0-9]{3,4}$"
+                                   pattern="^[a-zA-Z]{3,4}[ -]?[0-9]{3,4}$"
                                    title="2-3 English letters followed by 3-4 numbers" />
 
                             <div class="form-text">Example: ABC 1234 (English letters and numbers only)</div>
