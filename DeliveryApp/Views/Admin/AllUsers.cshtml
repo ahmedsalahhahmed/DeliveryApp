@@ -11,8 +11,16 @@
 
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-success border-2 fw-bold" role="alert">
+            ✅ @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-danger border-2 fw-bold" role="alert">
+            ❌ @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
@@ -21,8 +29,10 @@
         <table class="table table-striped table-bordered table-hover align-middle">
             <thead class="table-dark">
                 <tr>
+                    <th class="text-center" style="width: 80px;">Photo</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Phone Number</th>
                     <th>Type</th>
                     <th class="text-center">Rides Taken</th>
                     <th class="text-center">Jobs Done</th>
@@ -34,8 +44,33 @@
                 @foreach (var vm in Model)
                 {
                     <tr class="@(vm.IsBanned ? "table-danger" : "")">
+                        <td class="text-center">
+                            @if (!string.IsNullOrEmpty(vm.User.ProfileImagePath))
+                            {
+                                <img src="@vm.User.ProfileImagePath" class="rounded-circle shadow-sm border" style="width: 45px; height: 45px; object-fit: cover;" alt="@vm.User.Name" />
+                            }
+                            else
+                            {
+                                <div class="bg-secondary rounded-circle mx-auto d-flex justify-content-center align-items-center text-white shadow-sm" style="width: 45px; height: 45px;">
+                                    <span>👤</span>
+                                </div>
+                            }
+                        </td>
+
                         <td class="fw-semibold">@vm.User.Name</td>
                         <td class="text-muted">@vm.User.Email</td>
+
+                        <td class="fw-bold">
+                            @if (!string.IsNullOrEmpty(vm.User.PhoneNumber))
+                            {
+                                <a href="tel:@vm.User.PhoneNumber" class="text-decoration-none text-dark">📞 @vm.User.PhoneNumber</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Not provided</span>
+                            }
+                        </td>
+
                         <td>
                             @if (vm.User.UserType == "Driver")
                             {
@@ -96,6 +131,13 @@
                                     </button>
                                 </form>
                             }
+                            <form asp-action="DeleteUser" method="post" class="d-inline"
+                                  onsubmit="return confirm('CRITICAL WARNING: Are you sure you want to PERMANENTLY delete @vm.User.Name?\n\nThis action cannot be undone and may fail if they have active ride history!');">
+                                <input type="hidden" name="id" value="@vm.User.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger fw-bold ms-1 shadow-sm">
+                                    🗑️ Delete
+                                </button>
+                                </form>
                         </td>
                     </tr>
                 }

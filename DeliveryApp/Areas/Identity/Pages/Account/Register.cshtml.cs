@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using Microsoft.EntityFrameworkCore;
 namespace DeliveryApp.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
@@ -94,6 +95,13 @@ namespace DeliveryApp.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+
+            [Required(ErrorMessage = "Phone number is required.")]
+            [StringLength(11, MinimumLength = 11, ErrorMessage = "Phone number must be exactly 11 digits.")]
+            [RegularExpression(@"^01[0125][0-9]{8}$", ErrorMessage = "Must be a valid Egyptian mobile number (e.g., 010..., 011..., 012..., 015...).")]
+            [Display(Name = "Phone Number")]
+            public string PhoneNumber { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -137,6 +145,17 @@ namespace DeliveryApp.Areas.Identity.Pages.Account
                 var user = CreateUser();
                 user.Name = Input.Name;
                 user.UserType = Input.UserType;
+                user.PhoneNumber = Input.PhoneNumber;
+
+
+                var phoneExists = await _userManager.Users.AnyAsync(u => u.PhoneNumber == Input.PhoneNumber);
+
+                if (phoneExists)
+                {
+                    ModelState.AddModelError("Input.PhoneNumber", "This phone number is already registered to another account.");
+
+                    return Page();
+                }
 
                 if (Input.ProfilePicture != null && Input.ProfilePicture.Length > 0)
                 {

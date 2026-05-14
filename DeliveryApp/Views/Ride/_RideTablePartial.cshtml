@@ -20,6 +20,10 @@
             {
                 <th>Driver Details</th>
             }
+            @if (currentUser?.UserType == "Driver")
+            {
+                <th>Passenger Details</th>
+            }
             <th class="text-center">Actions</th>
         </tr>
     </thead>
@@ -71,13 +75,11 @@
                             <div class="d-flex align-items-center">
                                 @if (!string.IsNullOrEmpty(item.Driver.ProfileImagePath))
                                 {
-                                    <img src="@item.Driver.ProfileImagePath" class="rounded-circle me-3 shadow-sm" style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #ddd;" alt="Driver Photo" />
+                                    <img src="@item.Driver.ProfileImagePath" class="rounded-circle me-3 shadow-sm" style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #ddd;" alt="Driver" />
                                 }
                                 else
                                 {
-                                    <div class="bg-secondary rounded-circle me-3 d-flex justify-content-center align-items-center text-white shadow-sm" style="width: 45px; height: 45px;">
-                                        <span>👤</span>
-                                    </div>
+                                    <div class="bg-secondary rounded-circle me-3 d-flex justify-content-center align-items-center text-white shadow-sm" style="width: 45px; height: 45px;"><span>👤</span></div>
                                 }
                                 <div>
                                     <strong class="mb-0">@item.Driver.Name</strong><br />
@@ -85,12 +87,45 @@
                                         @item.Driver.DriverVehicle?.Make @item.Driver.DriverVehicle?.Model <br />
                                         Plate: <strong class="text-dark">@item.Driver.DriverVehicle?.LicensePlate</strong>
                                     </span>
+
+                                    @if (item.Status == "Driver Assigned")
+                                    {
+                                        <div class="mt-1">
+                                            <a href="tel:@item.Driver.PhoneNumber" class="badge bg-success text-white text-decoration-none shadow-sm py-1 px-2">
+                                                📞 @item.Driver.PhoneNumber
+                                            </a>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         }
                         else
                         {
                             <span class="text-muted fst-italic">Waiting for driver...</span>
+                        }
+                    </td>
+                }
+                @if (currentUser?.UserType == "Driver")
+                {
+                    <td>
+                        @if (item.Passenger != null)
+                        {
+                            <div>
+                                <strong class="mb-0">👤 @item.Passenger.Name</strong><br />
+
+                                @if (item.Status == "Driver Assigned" && item.DriverId == currentUser.Id)
+                                {
+                                    <div class="mt-1">
+                                        <a href="tel:@item.Passenger.PhoneNumber" class="badge bg-success text-white text-decoration-none shadow-sm py-1 px-2">
+                                            📞 @item.Passenger.PhoneNumber
+                                        </a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary text-white mt-1 py-1 px-2">Number hidden until assigned</span>
+                                }
+                            </div>
                         }
                     </td>
                 }

@@ -54,8 +54,29 @@
                     <tr>
                         <td class="fw-bold text-muted">#@item.Id</td>
                         <td><span class="badge @typeBadge">@typeIcon @item.DeliveryType</span></td>
-                        <td>@item.Passenger?.Name</td>
-                        <td>@(item.Driver != null ? item.Driver.Name : "<span class='text-muted'>Unassigned</span>")</td>
+                        <td>
+                            @if (item.Passenger != null)
+                            {
+                                <div class="fw-bold text-dark">@item.Passenger.Name</div>
+                                <a href="mailto:@item.Passenger.Email" class="text-muted small text-decoration-none">📧 @item.Passenger.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Unknown</span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (item.Driver != null)
+                            {
+                                <div class="fw-bold text-dark">@item.Driver.Name</div>
+                                <a href="mailto:@item.Driver.Email" class="text-muted small text-decoration-none">📧 @item.Driver.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Unassigned</span>
+                            }
+                        </td>
                         <td>
                             <small>
                                 <span class="text-success fw-semibold">@item.PickupAddress</span>

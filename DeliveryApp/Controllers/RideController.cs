@@ -50,6 +50,7 @@ namespace DeliveryApp.Controllers
             var rides = _context.Rides
                 .Include(r => r.Driver)
                 .ThenInclude(d => d.DriverVehicle)
+                .Include(r => r.Passenger)
                 .ToList();
 
             return View(rides);

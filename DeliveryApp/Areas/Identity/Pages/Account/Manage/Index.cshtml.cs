@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using Microsoft.EntityFrameworkCore;
 namespace DeliveryApp.Areas.Identity.Pages.Account.Manage
 {
     public class IndexModel : PageModel
@@ -63,11 +64,15 @@ namespace DeliveryApp.Areas.Identity.Pages.Account.Manage
             /// 
 
 
+
             [Required]
             [Display(Name = "Full Name")]
             public string Name { get; set; }
 
             [Phone]
+            [Required(ErrorMessage = "Phone number is required.")]
+            [StringLength(11, MinimumLength = 11, ErrorMessage = "Phone number must be exactly 11 digits.")]
+            [RegularExpression(@"^01[0125][0-9]{8}$", ErrorMessage = "Must be a valid Egyptian mobile number (e.g., 010..., 011..., 012..., 015...).")]
             [Display(Name = "Phone number")]
             public string PhoneNumber { get; set; }
 
@@ -118,6 +123,15 @@ namespace DeliveryApp.Areas.Identity.Pages.Account.Manage
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)
             {
+
+                var phoneExists = await _userManager.Users.AnyAsync(u => u.PhoneNumber == Input.PhoneNumber && u.Id != user.Id);
+                if (phoneExists)
+                {
+                    ModelState.AddModelError("Input.PhoneNumber", "This phone number is already registered to another account.");
+                    await LoadAsync(user);
+                    return Page();
+                }
+
                 var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
                 if (!setPhoneResult.Succeeded)
                 {

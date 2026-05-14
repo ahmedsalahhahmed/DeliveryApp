@@ -65,37 +65,72 @@ namespace DeliveryApp.Controllers
             return View(ratedRides);
         }
 
-        // GET: Admin/AllUsers — excludes Admin accounts, includes ride counts + ban state
+        // GET: Admin/AllUsers
         public async Task<IActionResult> AllUsers()
         {
-            // Only show Passengers and Drivers — not other admins
-            var users = await _userManager.Users
+            var allUsers = await _userManager.Users
                 .Where(u => u.UserType == "Passenger" || u.UserType == "Driver")
                 .ToListAsync();
 
-            var viewModels = users.Select(u => new AdminUserViewModel
-            {
-                User = u,
-                PassengerRideCount = _context.Rides.Count(r => r.PassengerId == u.Id),
-                DriverRideCount = _context.Rides.Count(r => r.DriverId == u.Id),
-                IsBanned = u.LockoutEnabled && u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
-            }).ToList();
+            var userViewModels = new List<AdminUserViewModel>();
 
-            return View(viewModels);
+            foreach (var user in allUsers)
+            {
+                int passengerCount = await _context.Rides.CountAsync(r => r.PassengerId == user.Id);
+                int driverCount = await _context.Rides.CountAsync(r => r.DriverId == user.Id);
+
+                bool isBanned = user.LockoutEnd != null && user.LockoutEnd > DateTimeOffset.UtcNow;
+
+                var vm = new AdminUserViewModel
+                {
+                    User = user,
+                    PassengerRideCount = passengerCount,
+                    DriverRideCount = driverCount,
+                    IsBanned = isBanned
+                };
+
+                userViewModels.Add(vm);
+            }
+
+            return View(userViewModels);
         }
 
+        // POST: Admin/BanUser
+        [HttpPost]
         // POST: Admin/BanUser
         [HttpPost]
         public async Task<IActionResult> BanUser(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-            if (user != null)
+            if (user == null) return NotFound();
+
+            // SECURITY: Stop the Admin from banning themselves!
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (user.Id == currentUser.Id)
             {
-                await _userManager.SetLockoutEnabledAsync(user, true);
-                // Lock them out for 100 years — effectively permanent
-                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
-                TempData["SuccessMessage"] = $"{user.Name} has been banned.";
+                TempData["ErrorMessage"] = "Security Alert: You cannot ban your own Admin account!";
+                return RedirectToAction(nameof(AllUsers));
             }
+
+            
+            bool isActiveOnRide = await _context.Rides.AnyAsync(r =>
+                (r.PassengerId == user.Id || r.DriverId == user.Id) &&
+                r.Status != "Completed" &&
+                r.Status != "Cancelled");
+
+            if (isActiveOnRide)
+            {
+                // Block the ban and warn the admin
+                TempData["ErrorMessage"] = $"Stop! Cannot ban {user.Name}. They are currently involved in an active ride. You must wait for the trip to finish or cancel it first.";
+                return RedirectToAction(nameof(AllUsers));
+            }
+
+            // If they pass the checks, drop the ban hammer!
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100)); // 100-year ban
+
+            TempData["SuccessMessage"] = $"{user.Name} has been successfully banned and locked out.";
+
             return RedirectToAction(nameof(AllUsers));
         }
 
@@ -141,6 +176,51 @@ namespace DeliveryApp.Controllers
                 TempData["SuccessMessage"] = $"Ride #{id} has been cancelled.";
             }
             return RedirectToAction(nameof(AllRides));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            // 1. Find the user
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            // 2. SECURITY: Stop the Admin from deleting themselves!
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (user.Id == currentUser.Id)
+            {
+                TempData["ErrorMessage"] = "Security Alert: You cannot delete your own Admin account!";
+                return RedirectToAction(nameof(AllUsers));
+            }
+
+           
+            // We check if they are the passenger OR the driver on an active trip!
+            bool isActiveOnRide = await _context.Rides.AnyAsync(r =>
+                (r.PassengerId == user.Id || r.DriverId == user.Id) &&
+                r.Status != "Completed" &&
+                r.Status != "Cancelled");
+
+            if (isActiveOnRide)
+            {
+                // Block the deletion and warn the admin!
+                TempData["ErrorMessage"] = $"Stop! Cannot delete {user.Name}. They are currently involved in an active ride. You must wait for the trip to finish or cancel it first.";
+                return RedirectToAction(nameof(AllUsers));
+            }
+    
+            // 3. Attempt the Hard Delete
+            var result = await _userManager.DeleteAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = $"User {user.Name} has been permanently deleted from the database.";
+            }
+            else
+            {
+                // If it fails (because of completed ride history), show an error
+                TempData["ErrorMessage"] = $"Failed to delete {user.Name}. They likely have completed ride history tied to their account. Please ban them instead to preserve records.";
+            }
+
+            return RedirectToAction(nameof(AllUsers));
         }
     }
 }
